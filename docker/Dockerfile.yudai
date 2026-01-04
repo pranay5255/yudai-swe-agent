@@ -2,6 +2,8 @@ FROM ghcr.io/foundry-rs/foundry:latest
 
 SHELL ["/bin/bash", "-lc"]
 
+USER root
+
 ARG SLITHER_VERSION=0.10.2
 ARG MYTHRIL_VERSION=0.24.8
 ARG SOLC_VERSION=0.8.24
