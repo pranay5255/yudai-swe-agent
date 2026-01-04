@@ -1,10 +1,11 @@
-"""Foundry development environment for smart contract development.
+"""Foundry development environment for smart contract development and security analysis.
 
 This environment extends DockerEnvironment with Foundry-specific features:
 - Pre-configured with Foundry tools (forge, cast, anvil, chisel)
+- Security analysis tools (slither, aderyn, mythril, echidna)
 - Volume mounting for host Foundry projects
 - Environment variable forwarding for RPC URLs and API keys
-- Longer timeouts suitable for contract compilation
+- Longer timeouts suitable for contract compilation and analysis
 """
 
 import logging
@@ -21,8 +22,8 @@ class FoundryEnvironmentConfig(BaseModel):
     """Configuration for Foundry development environment."""
 
     # Docker image settings
-    image: str = "ghcr.io/foundry-rs/foundry:latest"
-    """Docker image with Foundry tools. Default is official Foundry image."""
+    image: str = "yudai/foundry-full:latest"
+    """Docker image with Foundry + security tools. Build with docker/Dockerfile.yudai."""
 
     cwd: str = "/workspace"
     """Working directory inside the container."""
