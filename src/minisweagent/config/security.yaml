@@ -1,0 +1,341 @@
+# =============================================================================
+# SECURITY AUDIT AGENT CONFIGURATION
+# =============================================================================
+# This config is optimized for smart contract security analysis and auditing.
+# Use with: mini -c security -t "audit the contracts"
+# =============================================================================
+
+agent:
+  # ---------------------------------------------------------------------------
+  # SYSTEM TEMPLATE
+  # ---------------------------------------------------------------------------
+  # Security auditor identity focused on vulnerability detection.
+  # ---------------------------------------------------------------------------
+  system_template: |
+    You are an expert smart contract security auditor. Your goal is to find vulnerabilities,
+    explain their impact, and provide remediation guidance.
+
+    Your response must contain exactly ONE bash code block with the command(s) to execute.
+    Include a THOUGHT section before your command where you explain your reasoning.
+
+    ## Security Analysis Tools
+
+    ### Static Analyzers
+    - `slither .` - Comprehensive static analysis (93+ detectors)
+    - `slither . --json /tmp/report.json` - JSON output for parsing
+    - `slither . --print human-summary` - Human-readable summary
+    - `aderyn .` - Fast Rust-based pattern detection
+
+    ### Symbolic Execution
+    - `myth analyze src/Contract.sol` - Deep analysis (slower but thorough)
+    - `myth analyze src/Contract.sol --execution-timeout 60` - With timeout
+
+    ### Property-Based Fuzzing
+    - `echidna . --contract ContractName` - Property-based fuzzing
+    - `echidna . --contract ContractName --test-mode assertion` - Assertion mode
+    - `forge test --fuzz-runs 10000` - Foundry built-in fuzzing
+
+    ### Foundry Tools (for verification)
+    - `forge build` - Compile contracts first
+    - `forge test -vvvv` - Run tests with full traces
+    - `cast call` - Read contract state
+    - `anvil` - Local testnet for exploit PoCs
+
+    ## Vulnerability Checklist (by 2024 severity)
+
+    1. **Access Control** ($953M lost): Missing modifiers, public privileged functions
+    2. **Logic Errors** ($64M): Incorrect calculations, missing edge cases
+    3. **Reentrancy** ($36M): External calls before state updates
+    4. **Flash Loan Attacks** ($34M): Unchecked callbacks, oracle manipulation
+    5. **Rounding Errors**: EIP-4626 inflation, precision loss
+
+    ## EIP-Specific Security Checks
+
+    - **EIP-4626**: Virtual offset for inflation attack prevention
+    - **EIP-2612**: chainId in domain separator, nonce validation
+    - **EIP-3156**: CALLBACK_SUCCESS return value verification
+    - **Uniswap V4 Hooks**: onlyPoolManager modifier, delta accounting
+
+    ## Finding Report Format
+
+    Structure each finding as:
+    ```
+    SEVERITY: Critical/High/Medium/Low/Info
+    TITLE: Brief description
+    LOCATION: file.sol:line
+    DESCRIPTION: What the vulnerability is
+    IMPACT: What an attacker could do
+    REMEDIATION: How to fix it
+    ```
+
+    ## Response Format
+
+    <format_example>
+    THOUGHT: Explain your analysis strategy and what you expect to find.
+
+    ```bash
+    your_command_here
+    ```
+    </format_example>
+
+  # ---------------------------------------------------------------------------
+  # INSTANCE TEMPLATE
+  # ---------------------------------------------------------------------------
+  # Security audit workflow and environment info.
+  # ---------------------------------------------------------------------------
+  instance_template: |
+    ## Your Task
+
+    {{task}}
+
+    ## Environment
+
+    - **Working Directory**: {{cwd}}
+    - **System**: {{system}} {{release}}
+    - **Tools Available**: slither, aderyn, mythril, echidna, forge, cast, anvil
+
+    ## Recommended Audit Workflow
+
+    1. **Compile First**
+       ```bash
+       forge build
+       ```
+
+    2. **Quick Static Analysis** (run both for coverage)
+       ```bash
+       slither . 2>&1 | head -100
+       ```
+       ```bash
+       aderyn .
+       ```
+
+    3. **Deep Analysis** (for critical contracts)
+       ```bash
+       myth analyze src/Contract.sol --execution-timeout 120
+       ```
+
+    4. **Review & Prioritize**
+       - Filter false positives based on project context
+       - Rank findings by severity (Critical > High > Medium > Low)
+       - Cross-reference with known vulnerability patterns
+
+    5. **Generate PoC Exploits** (for confirmed vulnerabilities)
+       - Start anvil: `anvil &`
+       - Deploy vulnerable contract
+       - Create snapshot: `cast rpc evm_snapshot`
+       - Execute exploit and document steps
+
+    6. **Recommend Fixes**
+       - Provide before/after code
+       - Reference OpenZeppelin or established patterns
+       - Consider gas implications
+
+    7. **Submit Report**
+       ```bash
+       echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+       ```
+       <important>Do not combine with other commands. After this, you cannot continue.</important>
+
+    ## Important Rules
+
+    1. Every response must contain exactly ONE bash code block
+    2. Always compile with `forge build` before running static analysis
+    3. Directory changes are NOT persistent (use `cd /path && command`)
+    4. Start with quick scans (slither/aderyn) before deep analysis (mythril)
+
+    Now, begin by compiling the project and running initial static analysis.
+
+  # ---------------------------------------------------------------------------
+  # ACTION OBSERVATION TEMPLATE
+  # ---------------------------------------------------------------------------
+  # How command output is shown back to the agent.
+  # ---------------------------------------------------------------------------
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {%- if output.returncode != 0 %}
+    <error_hint>
+    Common security tool errors:
+    - "solc not found": Run `forge build` first to compile
+    - "No contracts found": Check src/ directory exists
+    - "Timeout": Reduce scope or use --execution-timeout flag
+    - "Python/pip error": Tool installation issue in container
+    </error_hint>
+    {%- endif %}
+    {% if output.output | length < 20000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>
+    Output exceeded 20000 characters and was truncated.
+    For large outputs:
+    - Use `slither . --print human-summary` for concise output
+    - Redirect to file: `slither . > /tmp/report.txt && head -200 /tmp/report.txt`
+    - Analyze specific files: `slither src/Contract.sol`
+    </warning>
+    {%- set elided_chars = output.output | length - 20000 -%}
+    <output_head>
+    {{ output.output[:10000] }}
+    </output_head>
+    <elided>{{ elided_chars }} characters omitted</elided>
+    <output_tail>
+    {{ output.output[-10000:] }}
+    </output_tail>
+    {%- endif %}
+
+  # ---------------------------------------------------------------------------
+  # FORMAT ERROR TEMPLATE
+  # ---------------------------------------------------------------------------
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}} code blocks.
+
+    Format your response as:
+    ```
+    THOUGHT: Your analysis reasoning.
+
+    ```bash
+    your_command_here
+    ```
+    ```
+
+    To finish and submit your audit report:
+    ```bash
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+    ```
+
+  # ---------------------------------------------------------------------------
+  # TIMEOUT TEMPLATE
+  # ---------------------------------------------------------------------------
+  timeout_template: |
+    Command timed out after {{timeout}} seconds:
+    <command>{{action['action']}}</command>
+
+    {% if output | length < 10000 -%}
+    <partial_output>{{output}}</partial_output>
+    {%- else -%}
+    <partial_output_head>{{ output[:5000] }}</partial_output_head>
+    <elided>{{ output | length - 10000 }} characters omitted</elided>
+    <partial_output_tail>{{ output[-5000:] }}</partial_output_tail>
+    {%- endif %}
+
+    For timeout issues with security tools:
+    - Use `--execution-timeout` flag for mythril
+    - Analyze specific files instead of entire project
+    - Use faster tools first: aderyn < slither < mythril
+    - Run echidna with fewer iterations
+
+  # ---------------------------------------------------------------------------
+  # AGENT SETTINGS
+  # ---------------------------------------------------------------------------
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+  step_limit: 150
+  cost_limit: 10.0
+  mode: confirm
+  confirm_exit: true
+
+  # ---------------------------------------------------------------------------
+  # WHITELIST ACTIONS
+  # ---------------------------------------------------------------------------
+  # Commands that execute without confirmation (all read-only/analysis)
+  # ---------------------------------------------------------------------------
+  whitelist_actions:
+    # File exploration
+    - "^ls"
+    - "^cat "
+    - "^head "
+    - "^tail "
+    - "^find "
+    - "^grep "
+    - "^tree"
+    - "^pwd$"
+    - "^echo "
+    - "^wc "
+    # Foundry read-only operations
+    - "^forge build"
+    - "^forge test"
+    - "^forge coverage"
+    - "^forge inspect"
+    - "^cast call"
+    - "^cast storage"
+    - "^cast balance"
+    - "^cast block"
+    - "^cast chain"
+    - "^cast abi"
+    - "^cast 4byte"
+    # Security analysis tools (all read-only)
+    - "^slither"
+    - "^aderyn"
+    - "^myth"
+    - "^echidna"
+
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+# Uses the unified Foundry + security tools Docker image
+# =============================================================================
+
+environment:
+  # ---------------------------------------------------------------------------
+  # ENVIRONMENT CLASS
+  # ---------------------------------------------------------------------------
+  # Use FoundryEnvironment with the unified image containing security tools.
+  # ---------------------------------------------------------------------------
+  environment_class: foundry
+
+  # ---------------------------------------------------------------------------
+  # DOCKER IMAGE
+  # ---------------------------------------------------------------------------
+  # Unified image with Foundry + security analysis tools.
+  # Build with: docker build -t yudai/foundry-full:latest -f docker/Dockerfile.yudai .
+  # ---------------------------------------------------------------------------
+  image: "yudai/foundry-full:latest"
+
+  # ---------------------------------------------------------------------------
+  # TIMEOUT
+  # ---------------------------------------------------------------------------
+  # Longer timeout for security analysis tools.
+  # Mythril symbolic execution can take 2-5 minutes for complex contracts.
+  # ---------------------------------------------------------------------------
+  timeout: 180
+
+  # ---------------------------------------------------------------------------
+  # CONTAINER TIMEOUT
+  # ---------------------------------------------------------------------------
+  # Security audits can be long sessions.
+  # ---------------------------------------------------------------------------
+  container_timeout: "6h"
+
+  # ---------------------------------------------------------------------------
+  # PROJECT PATH
+  # ---------------------------------------------------------------------------
+  # Set via CLI: mini -c security --project /path/to/project
+  # ---------------------------------------------------------------------------
+  project_path: ""
+
+  # ---------------------------------------------------------------------------
+  # ENVIRONMENT VARIABLES
+  # ---------------------------------------------------------------------------
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: "-R"
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"
+    FOUNDRY_PROFILE: "default"
+    FORCE_COLOR: "1"
+    CI: "true"
+
+
+# =============================================================================
+# MODEL CONFIGURATION
+# =============================================================================
+# Optimized for security analysis with larger context for reports
+# =============================================================================
+
+model:
+  model_kwargs:
+    temperature: 0.0
+    drop_params: true
+    # Larger max_tokens for detailed security reports
+    max_tokens: 8192
