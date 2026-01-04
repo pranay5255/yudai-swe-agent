@@ -413,17 +413,26 @@ agent:
 # =============================================================================
 # ENVIRONMENT CONFIGURATION
 # =============================================================================
-# Settings for the FoundryEnvironment (Docker-based with Foundry tools)
+# Settings for the FoundryEnvironment (Docker-based with Foundry + security tools)
 # =============================================================================
 
 environment:
   # ---------------------------------------------------------------------------
   # ENVIRONMENT CLASS
   # ---------------------------------------------------------------------------
-  # Use FoundryEnvironment which provides a Docker container with Foundry tools.
-  # The container includes: forge, cast, anvil, chisel
+  # Use FoundryEnvironment which provides a Docker container with:
+  # - Foundry tools: forge, cast, anvil, chisel
+  # - Security tools: slither, aderyn, mythril, echidna (available but not primary)
   # ---------------------------------------------------------------------------
   environment_class: foundry
+
+  # ---------------------------------------------------------------------------
+  # DOCKER IMAGE
+  # ---------------------------------------------------------------------------
+  # Unified image with Foundry + security analysis tools.
+  # Build with: docker build -t yudai/foundry-full:latest -f docker/Dockerfile.yudai .
+  # ---------------------------------------------------------------------------
+  image: "yudai/foundry-full:latest"
 
   # ---------------------------------------------------------------------------
   # PROJECT PATH
