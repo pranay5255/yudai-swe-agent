@@ -1,0 +1,57 @@
+FROM ghcr.io/foundry-rs/foundry:latest
+
+SHELL ["/bin/bash", "-lc"]
+
+USER root
+
+ARG SLITHER_VERSION=0.10.2
+ARG MYTHRIL_VERSION=0.24.8
+ARG SOLC_VERSION=0.8.24
+ARG ECHIDNA_VERSION=2.2.5
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    VIRTUAL_ENV=/opt/venv
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 python3-venv python3-pip python3-dev \
+      build-essential pkg-config \
+      git curl wget ca-certificates unzip \
+      libssl-dev libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv "${VIRTUAL_ENV}" \
+    && . "${VIRTUAL_ENV}/bin/activate" \
+    && pip install --upgrade pip setuptools wheel \
+    && pip install "slither-analyzer==${SLITHER_VERSION}" \
+    && pip install solc-select \
+    && pip install "mythril==${MYTHRIL_VERSION}" --use-deprecated=legacy-resolver || echo "Mythril install failed, continuing..."
+
+ENV PATH="${VIRTUAL_ENV}/bin:/root/.solc-select:${PATH}"
+
+RUN solc-select install "${SOLC_VERSION}" \
+    && solc-select use "${SOLC_VERSION}" \
+    && ln -sf /root/.solc-select/solc /usr/local/bin/solc
+
+RUN curl -fsSL https://github.com/Cyfrin/aderyn/releases/download/aderyn-v0.6.5/aderyn-installer.sh | bash \
+    && ln -sf /root/.aderyn/bin/aderyn /usr/local/bin/aderyn || true
+
+ARG TARGETARCH
+RUN case "${TARGETARCH}" in \
+      amd64) echidna_arch="x86_64" ;; \
+      arm64) echidna_arch="aarch64" ;; \
+      *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
+    esac \
+    && curl -fsSL -o /tmp/echidna.tar.gz \
+         "https://github.com/crytic/echidna/releases/download/v${ECHIDNA_VERSION}/echidna-${ECHIDNA_VERSION}-${echidna_arch}-linux.tar.gz" \
+    && tar -xzf /tmp/echidna.tar.gz -C /tmp \
+    && install -m 0755 /tmp/echidna /usr/local/bin/echidna \
+    && install -m 0755 /tmp/echidna /usr/local/bin/echidna-test \
+    && rm -rf /tmp/echidna.tar.gz /tmp/echidna
+
+RUN forge --version && cast --version && anvil --version \
+    && slither --version && (myth version || echo "Mythril not installed") \
+    && aderyn --version && echidna-test --version
+
+WORKDIR /workspace
