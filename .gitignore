@@ -182,3 +182,18 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
+# Dataset directories
+dataset/raw/
+dataset/clean/
+dataset/pairs/
+
+# Trajectories
+trajectories/
+
+# MuSe generated files
+MuSe/sumo/
+MuSe/contracts/
+MuSe/test/
+MuSe/build/
+MuSe/node_modules/
+
