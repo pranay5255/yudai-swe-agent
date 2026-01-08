@@ -87,11 +87,12 @@ include-package-data = true
 version = {attr = "minisweagent.__version__"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
-include = ["minisweagent*"]
+where = ["src", "."]
+include = ["minisweagent*", "vulnerability_injection*", "dataset*"]
 
 [tool.setuptools.package-data]
 minisweagent = ["config/**/*"]
+vulnerability_injection = ["config/**/*"]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
