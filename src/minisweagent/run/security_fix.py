@@ -53,6 +53,11 @@ def main(
         "-l", "--cost-limit",
         help="Maximum cost in USD for the agent",
     ),
+    config: str | None = typer.Option(
+        None,
+        "--config",
+        help="Agent config name or path (default: foundry.yaml)",
+    ),
     docker_image: str = typer.Option(
         "yudai-complete:latest",
         "--image",
@@ -80,6 +85,7 @@ def main(
         "[bold green]RL Vulnerability Fix Demo[/bold green]\n"
         f"Contract: {contract}\n"
         f"Model: {model or 'default'}\n"
+        f"Config: {config or 'foundry.yaml'}\n"
         f"Docker: {docker_image}\n"
         f"Output: {output}",
         title="Episode Configuration",
@@ -107,6 +113,7 @@ def main(
             yolo=yolo,
             cost_limit=cost_limit,
             docker_image=docker_image,
+            config_path=config,
         )
     except Exception as e:
         console.print(f"[red]Episode failed: {e}[/red]")
@@ -158,4 +165,3 @@ def main(
 
 if __name__ == "__main__":
     app()
-
