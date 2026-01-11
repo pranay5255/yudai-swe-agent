@@ -1,5 +1,6 @@
 import logging
 import os
+import platform
 import shlex
 import subprocess
 import uuid
@@ -50,7 +51,7 @@ class DockerEnvironment:
         self._start_container()
 
     def get_template_vars(self) -> dict[str, Any]:
-        return self.config.model_dump()
+        return self.config.model_dump() | platform.uname()._asdict() | os.environ
 
     def _start_container(self):
         """Start the Docker container and return the container ID."""
