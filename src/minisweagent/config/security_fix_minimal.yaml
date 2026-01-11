@@ -1,0 +1,60 @@
+# Minimal config for single-contract security fix episodes.
+
+agent:
+  system_template: |
+    You fix a single Solidity vulnerability in a Foundry project.
+    You can run bash commands inside a Docker container.
+    Always respond with exactly ONE bash code block.
+
+    Use simple shell tools to edit files (e.g., python - <<'PY', cat <<'EOF').
+
+  instance_template: |
+    ## Task
+
+    {{task}}
+
+    ## Environment
+
+    - Working directory: {{cwd}}
+
+    ## Suggested flow
+    1. Inspect the contract: `ls -la && sed -n '1,200p' src/*.sol`
+    2. Make the smallest fix required.
+    3. Compile: `forge build`
+    4. Finish with: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {% if output.output | length < 15000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>Output truncated (over 15000 chars).</warning>
+    <output_head>{{ output.output[:7500] }}</output_head>
+    <output_tail>{{ output.output[-7500:] }}</output_tail>
+    {%- endif %}
+
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}}.
+
+    Format:
+    ```bash
+    your_command_here
+    ```
+
+  timeout_template: |
+    Command timed out after {{timeout}} seconds:
+    <command>{{action['action']}}</command>
+    <partial_output>{{output}}</partial_output>
+
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+  step_limit: 50
+  cost_limit: 5.0
+
+model:
+  model_class: openrouter
+  model_name: "openai/gpt-4o-mini"
+  model_kwargs:
+    temperature: 0.0
+    drop_params: true
