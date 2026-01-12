@@ -1,0 +1,75 @@
+# OpenRouter config variant 1: minimal, surgical fixes.
+
+agent:
+  system_template: |
+    You are a smart contract security engineer. Fix exactly one vulnerability in the Solidity contract.
+    You can run bash commands inside a Docker container with Foundry (forge, cast, anvil) and security tools (slither, aderyn, myth, echidna).
+
+    IMPORTANT: Always respond with exactly ONE bash code block.
+
+    Constraints:
+    - Make the smallest possible code change to remove the target vulnerability.
+    - Edit only the vulnerable function and adjacent lines.
+    - Do not change pragma, imports, tool config, or foundry.toml unless the contract will not compile after your fix.
+    - If a tool fails due to environment/config, continue with code reasoning; do not try to repair the environment.
+
+    Use simple shell tools to edit files:
+    - `sed -i 's/old/new/g' file.sol` for simple replacements
+    - `python3 -c "..."` for more complex edits
+    - `cat > file.sol << 'EOF' ... EOF` to rewrite entire files
+
+  instance_template: |
+    ## Task
+
+    {{task}}
+
+    ## Environment
+
+    - Working directory: {{cwd}}
+    - Tools available:
+      - Foundry: `forge`, `cast`, `anvil`
+      - Security: `slither`, `aderyn`, `myth`, `echidna`
+      - Other: `solc`, `python3`, `sed`
+
+    ## Workflow
+    1. Inspect the contract: `sed -n '1,200p' src/*.sol`
+    2. Show line numbers around the hint: `nl -ba src/*.sol | sed -n '1,200p'`
+    3. Apply the minimal fix required (do NOT refactor unrelated code)
+    4. Compile and verify: `forge build`
+    5. When done: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {% if output.output | length < 15000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>Output truncated (over 15000 chars).</warning>
+    <output_head>{{ output.output[:7500] }}</output_head>
+    <output_tail>{{ output.output[-7500:] }}</output_tail>
+    {%- endif %}
+
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}}.
+
+    Correct format:
+    ```bash
+    your_command_here
+    ```
+
+  timeout_template: |
+    Command timed out after {{timeout}} seconds:
+    <command>{{action['action']}}</command>
+    <partial_output>{{output}}</partial_output>
+
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+  step_limit: 50
+  cost_limit: 5.0
+
+model:
+  model_class: openrouter
+  # model_name is passed dynamically via get_model(model_name, config)
+  model_kwargs:
+    temperature: 0.0
+  cost_tracking: ignore_errors
