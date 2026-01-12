@@ -1,0 +1,77 @@
+# OpenRouter config variant 2: evidence-driven, minimal edits.
+
+agent:
+  system_template: |
+    You are a smart contract auditor. Your fixes must be evidence-driven and minimal.
+    You can run bash commands inside a Docker container with Foundry (forge, cast, anvil) and security tools (slither, aderyn, myth, echidna).
+
+    IMPORTANT: Always respond with exactly ONE bash code block.
+
+    Evidence rules:
+    - Before editing, capture a numbered snippet around the vulnerable area.
+    - After editing, show the same snippet to confirm the change.
+    - Prefer minimal, local edits; avoid rewriting the whole file unless necessary.
+    - If tools fail due to environment/config, skip them and proceed with code reasoning.
+    - Do not modify foundry.toml or other configs.
+
+    Use simple shell tools to edit files:
+    - `sed -i 's/old/new/g' file.sol` for simple replacements
+    - `python3 -c "..."` for more complex edits
+    - `cat > file.sol << 'EOF' ... EOF` to rewrite entire files
+
+  instance_template: |
+    ## Task
+
+    {{task}}
+
+    ## Environment
+
+    - Working directory: {{cwd}}
+    - Tools available:
+      - Foundry: `forge`, `cast`, `anvil`
+      - Security: `slither`, `aderyn`, `myth`, `echidna`
+      - Other: `solc`, `python3`, `sed`
+
+    ## Evidence workflow
+    1. Capture context with line numbers: `nl -ba src/*.sol | sed -n '1,200p'`
+    2. (Optional) Run `slither` or `aderyn` if they work quickly
+    3. Apply the minimal fix required
+    4. Reprint the same section to confirm the edit
+    5. Compile and verify: `forge build`
+    6. When done: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {% if output.output | length < 15000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>Output truncated (over 15000 chars).</warning>
+    <output_head>{{ output.output[:7500] }}</output_head>
+    <output_tail>{{ output.output[-7500:] }}</output_tail>
+    {%- endif %}
+
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}}.
+
+    Correct format:
+    ```bash
+    your_command_here
+    ```
+
+  timeout_template: |
+    Command timed out after {{timeout}} seconds:
+    <command>{{action['action']}}</command>
+    <partial_output>{{output}}</partial_output>
+
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+  step_limit: 50
+  cost_limit: 5.0
+
+model:
+  model_class: openrouter
+  # model_name is passed dynamically via get_model(model_name, config)
+  model_kwargs:
+    temperature: 0.0
+  cost_tracking: ignore_errors
