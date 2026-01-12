@@ -56,6 +56,7 @@ class DockerEnvironment:
     def _start_container(self):
         """Start the Docker container and return the container ID."""
         container_name = f"minisweagent-{uuid.uuid4().hex[:8]}"
+        # Use --entrypoint to override image entrypoint and pass sleep as single command
         cmd = [
             self.config.executable,
             "run",
@@ -64,10 +65,12 @@ class DockerEnvironment:
             container_name,
             "-w",
             self.config.cwd,
+            "--entrypoint",
+            "/bin/bash",
             *self.config.run_args,
             self.config.image,
-            "sleep",
-            self.config.container_timeout,
+            "-c",
+            f"sleep {self.config.container_timeout}",
         ]
         self.logger.debug(f"Starting container with command: {shlex.join(cmd)}")
         result = subprocess.run(
