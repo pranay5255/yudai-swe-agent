@@ -1,0 +1,125 @@
+# =============================================================================
+# BASE DOCKERFILE - PARENT IMAGE
+# =============================================================================
+# This is the foundation for all template-specific images.
+# Contains: Foundry, Python, Security tools (Slither, Aderyn, Mythril, Echidna)
+#
+# Build: docker build -t yudai-base:latest -f docker/Dockerfile.base .
+# =============================================================================
+
+FROM ghcr.io/foundry-rs/foundry:latest
+
+SHELL ["/bin/bash", "-lc"]
+
+USER root
+
+# Version arguments
+ARG SLITHER_VERSION=0.10.2
+ARG MYTHRIL_VERSION=0.24.8
+ARG SOLC_VERSION=0.8.24
+ARG ECHIDNA_VERSION=2.2.5
+ARG PYTHON_VERSION=3.12
+
+# Environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    VENV_MAIN=/opt/venv-main \
+    VENV_MYTHRIL=/opt/venv-mythril \
+    UV_PYTHON=${PYTHON_VERSION} \
+    PATH="${VENV_MAIN}/bin:/root/.solc-select:/root/.cargo/bin:/root/.local/bin:${PATH}"
+
+# Install system dependencies including Python 3.12
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      software-properties-common \
+      ca-certificates \
+      curl \
+      wget \
+      git \
+      unzip \
+      build-essential \
+      pkg-config \
+      libssl-dev \
+      libffi-dev \
+      gnupg \
+      gpg-agent \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+      python${PYTHON_VERSION} \
+      python${PYTHON_VERSION}-venv \
+      python${PYTHON_VERSION}-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv package manager
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create main virtual environment using uv for Slither and other tools
+RUN uv venv "${VENV_MAIN}" --python ${PYTHON_VERSION} \
+    && . "${VENV_MAIN}/bin/activate" \
+    && uv pip install "slither-analyzer==${SLITHER_VERSION}" \
+    && uv pip install solc-select
+
+# Create separate virtual environment for Mythril
+RUN uv venv "${VENV_MYTHRIL}" --python ${PYTHON_VERSION} \
+    && . "${VENV_MYTHRIL}/bin/activate" \
+    && uv pip install "mythril==${MYTHRIL_VERSION}"
+
+# Install multiple solc versions for compatibility
+RUN . "${VENV_MAIN}/bin/activate" \
+    && solc-select install 0.4.26 \
+    && solc-select install 0.5.17 \
+    && solc-select install 0.6.12 \
+    && solc-select install 0.7.6 \
+    && solc-select install 0.8.20 \
+    && solc-select install 0.8.24 \
+    && solc-select use "${SOLC_VERSION}" \
+    && ln -sf /root/.solc-select/solc /usr/local/bin/solc
+
+# Install Aderyn
+RUN curl -fsSL https://github.com/Cyfrin/aderyn/releases/download/aderyn-v0.6.5/aderyn-installer.sh | bash
+
+# Install Echidna
+ARG TARGETARCH
+RUN case "${TARGETARCH}" in \
+      amd64) echidna_arch="x86_64" ;; \
+      arm64) echidna_arch="aarch64" ;; \
+      *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
+    esac \
+    && curl -fsSL -o /tmp/echidna.tar.gz \
+         "https://github.com/crytic/echidna/releases/download/v${ECHIDNA_VERSION}/echidna-${ECHIDNA_VERSION}-${echidna_arch}-linux.tar.gz" \
+    && tar -xzf /tmp/echidna.tar.gz -C /tmp \
+    && install -m 0755 /tmp/echidna /usr/local/bin/echidna \
+    && install -m 0755 /tmp/echidna /usr/local/bin/echidna-test \
+    && rm -rf /tmp/echidna.tar.gz /tmp/echidna
+
+# Create wrapper script for myth to use the correct venv
+RUN echo '#!/bin/bash' > /usr/local/bin/myth \
+    && echo '. /opt/venv-mythril/bin/activate' >> /usr/local/bin/myth \
+    && echo 'exec python -m mythril.interfaces.cli "$@"' >> /usr/local/bin/myth \
+    && chmod +x /usr/local/bin/myth
+
+# Verify all tools are installed correctly
+RUN echo "=== Testing Foundry Tools ===" \
+    && forge --version \
+    && cast --version \
+    && anvil --version \
+    && echo "=== Testing Python Environment ===" \
+    && python${PYTHON_VERSION} --version \
+    && uv --version \
+    && echo "=== Testing Security Tools ===" \
+    && . "${VENV_MAIN}/bin/activate" && slither --version \
+    && . "${VENV_MYTHRIL}/bin/activate" && python -m mythril.interfaces.cli version \
+    && aderyn --version \
+    && echidna-test --version \
+    && echo "=== All tools verified successfully ==="
+
+WORKDIR /workspace
+
+# Add labels for documentation
+LABEL maintainer="yudai-team"
+LABEL description="Yudai base image with Foundry and security tools"
+LABEL image.type="base"
+LABEL tools="forge,cast,anvil,slither,mythril,aderyn,echidna,solc,uv"
+LABEL python.version="${PYTHON_VERSION}"
+LABEL build.date="2026-01-13"
+
+# Note: This is the base image. Template-specific images build on top of this.
