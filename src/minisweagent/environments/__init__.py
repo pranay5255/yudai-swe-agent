@@ -12,6 +12,7 @@ _ENVIRONMENT_MAPPING = {
     "swerex_docker": "minisweagent.environments.extra.swerex_docker.SwerexDockerEnvironment",
     "bubblewrap": "minisweagent.environments.extra.bubblewrap.BubblewrapEnvironment",
     "foundry": "minisweagent.environments.foundry.FoundryEnvironment",
+    "foundry_parsed": "minisweagent.environments.extra.foundry_parsed.ParsedFoundryEnvironment",
 }
 
 
