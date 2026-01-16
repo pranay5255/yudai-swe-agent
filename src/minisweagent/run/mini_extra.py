@@ -16,6 +16,7 @@ subcommands = [
     ("minisweagent.run.extra.github_issue", ["github-issue", "gh"], "Run on a GitHub issue"),
     ("minisweagent.run.extra.swebench", ["swebench"], "Evaluate on SWE-bench (batch mode)"),
     ("minisweagent.run.extra.swebench_single", ["swebench-single"], "Evaluate on SWE-bench (single instance)"),
+    ("minisweagent.run.exploit_gen", ["exploit-gen"], "Run exploit generation on a forked chain"),
 ]
 
 
