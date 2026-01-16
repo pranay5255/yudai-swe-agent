@@ -26,6 +26,15 @@ agent:
       - Security: `slither`, `aderyn`, `myth`, `echidna`
       - Other: `solc`, `python3`, `sed`
 
+    ## Command Examples
+    - Compile: `forge build`
+    - Run tests: `forge test -vvvv`
+    - Run Slither: `slither . --json -`
+    - Run Aderyn: `aderyn .`
+    - Read chain state: `cast call <addr> "<sig>(args)" --rpc-url $ETH_RPC_URL`
+    - Send tx: `cast send <addr> "<sig>(args)" --rpc-url $ETH_RPC_URL --private-key $PRIVATE_KEY`
+    - Start forked node: `anvil --fork-url $ETH_RPC_URL --fork-block-number <n>`
+
     ## Workflow
     1. Inspect the contract: `cat src/*.sol`
     2. Run security analysis: `aderyn .` or `slither .` to locate vulnerabilities
@@ -37,14 +46,20 @@ agent:
 
   action_observation_template: |
     <returncode>{{output.returncode}}</returncode>
-    {% if output.output | length < 15000 -%}
+    {% if output.parsed is defined -%}
+    <parsed kind="{{output.parsed.kind}}">
+    {{ output.parsed.summary -}}
+    </parsed>
+    {%- endif %}
+    {% set raw_text = output.raw_output if output.raw_output is defined else output.output %}
+    {% if raw_text | length < 15000 -%}
     <output>
-    {{ output.output -}}
+    {{ raw_text -}}
     </output>
     {%- else -%}
     <warning>Output truncated (over 15000 chars).</warning>
-    <output_head>{{ output.output[:7500] }}</output_head>
-    <output_tail>{{ output.output[-7500:] }}</output_tail>
+    <output_head>{{ raw_text[:7500] }}</output_head>
+    <output_tail>{{ raw_text[-7500:] }}</output_tail>
     {%- endif %}
 
   format_error_template: |
