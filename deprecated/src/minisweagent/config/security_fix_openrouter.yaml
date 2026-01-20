@@ -1,0 +1,87 @@
+# OpenRouter config for single-contract security fix episodes.
+# Model name is passed dynamically from OPENROUTER_MODEL_NAME env var.
+
+agent:
+  system_template: |
+    You are a smart contract security expert. Your task is to fix a vulnerability in a Solidity contract.
+    You can run bash commands inside a Docker container with Foundry (forge, cast, anvil) and security tools (slither, aderyn, myth, echidna).
+
+    IMPORTANT: Always respond with exactly ONE bash code block.
+
+    Use simple shell tools to edit files:
+    - `sed -i 's/old/new/g' file.sol` for simple replacements
+    - `python3 -c "..."` for more complex edits
+    - `cat > file.sol << 'EOF' ... EOF` to rewrite entire files
+
+  instance_template: |
+    ## Task
+
+    {{task}}
+
+    ## Environment
+
+    - Working directory: {{cwd}}
+    - Tools available:
+      - Foundry: `forge` (build, test), `cast` (deployment, interaction), `anvil` (local node)
+      - Security: `slither`, `aderyn`, `myth`, `echidna`
+      - Other: `solc`, `python3`, `sed`
+
+    ## Command Examples
+    - Compile: `forge build`
+    - Run tests: `forge test -vvvv`
+    - Run Slither: `slither . --json -`
+    - Run Aderyn: `aderyn .`
+    - Read chain state: `cast call <addr> "<sig>(args)" --rpc-url $ETH_RPC_URL`
+    - Send tx: `cast send <addr> "<sig>(args)" --rpc-url $ETH_RPC_URL --private-key $PRIVATE_KEY`
+    - Start forked node: `anvil --fork-url $ETH_RPC_URL --fork-block-number <n>`
+
+    ## Workflow
+    1. Inspect the contract: `cat src/*.sol`
+    2. Run security analysis: `aderyn .` or `slither .` to locate vulnerabilities
+    3. Understand the vulnerability location and type
+    4. Make the minimal fix required (do NOT refactor unrelated code)
+    5. Compile and verify: `forge build`
+    6. (Optional) Run tests if available: `forge test`
+    7. When done: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {% if output.parsed is defined -%}
+    <parsed kind="{{output.parsed.kind}}">
+    {{ output.parsed.summary -}}
+    </parsed>
+    {%- endif %}
+    {% set raw_text = output.raw_output if output.raw_output is defined else output.output %}
+    {% if raw_text | length < 15000 -%}
+    <output>
+    {{ raw_text -}}
+    </output>
+    {%- else -%}
+    <warning>Output truncated (over 15000 chars).</warning>
+    <output_head>{{ raw_text[:7500] }}</output_head>
+    <output_tail>{{ raw_text[-7500:] }}</output_tail>
+    {%- endif %}
+
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}}.
+
+    Correct format:
+    ```bash
+    your_command_here
+    ```
+
+  timeout_template: |
+    Command timed out after {{timeout}} seconds:
+    <command>{{action['action']}}</command>
+    <partial_output>{{output}}</partial_output>
+
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+  step_limit: 50
+  cost_limit: 5.0
+
+model:
+  model_class: openrouter
+  # model_name is passed dynamically via get_model(model_name, config)
+  model_kwargs:
+    temperature: 0.0
+  cost_tracking: ignore_errors

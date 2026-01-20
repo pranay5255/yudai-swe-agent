@@ -1,0 +1,99 @@
+# =============================================================================
+# DOCKER COMPOSE FOR TEMPLATE IMAGES
+# =============================================================================
+# This file defines all template images in the hierarchy.
+# Useful for batch building and managing images.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.templates.yml build        # Build all
+#   docker compose -f docker/docker-compose.templates.yml build base   # Build base only
+#   docker compose -f docker/docker-compose.templates.yml push         # Push all
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # BASE IMAGE (Parent)
+  # =============================================================================
+  base:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+      args:
+        SLITHER_VERSION: 0.10.2
+        MYTHRIL_VERSION: 0.24.8
+        SOLC_VERSION: 0.8.24
+        ECHIDNA_VERSION: 2.2.5
+        PYTHON_VERSION: 3.12
+    image: yudai-base:latest
+    container_name: yudai-base-builder
+
+  # =============================================================================
+  # TEMPLATE IMAGES (Children)
+  # =============================================================================
+
+  # Solidity 0.4.x Standalone
+  sol-0.4-standalone:
+    build:
+      context: ..
+      dockerfile: docker/templates/Dockerfile.sol-0.4-standalone
+    image: yudai-sol-0.4-standalone:latest
+    container_name: yudai-sol-0.4-standalone-builder
+    depends_on:
+      - base
+
+  # Solidity 0.8.x Standalone
+  sol-0.8-standalone:
+    build:
+      context: ..
+      dockerfile: docker/templates/Dockerfile.sol-0.8-standalone
+    image: yudai-sol-0.8-standalone:latest
+    container_name: yudai-sol-0.8-standalone-builder
+    depends_on:
+      - base
+
+  # Solidity 0.8.x + OpenZeppelin v4
+  sol-0.8-oz-v4:
+    build:
+      context: ..
+      dockerfile: docker/templates/Dockerfile.sol-0.8-oz-v4
+    image: yudai-sol-0.8-oz-v4:latest
+    container_name: yudai-sol-0.8-oz-v4-builder
+    depends_on:
+      - base
+
+  # Solidity 0.8.x + OpenZeppelin v5
+  sol-0.8-oz-v5:
+    build:
+      context: ..
+      dockerfile: docker/templates/Dockerfile.sol-0.8-oz-v5
+    image: yudai-sol-0.8-oz-v5:latest
+    container_name: yudai-sol-0.8-oz-v5-builder
+    depends_on:
+      - base
+
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# The dependency chain:
+#   base (foundry + tools)
+#   ├── sol-0.4-standalone (no deps)
+#   ├── sol-0.8-standalone (no deps)
+#   ├── sol-0.8-oz-v4 (OpenZeppelin v4.9.6)
+#   └── sol-0.8-oz-v5 (OpenZeppelin v5.0.2)
+#
+# Build time (approximate):
+#   base: 3-5 minutes (first time)
+#   templates: 1-3 minutes each (first time)
+#   subsequent builds: seconds (cached)
+#
+# Size (approximate):
+#   base: ~1.2 GB
+#   sol-0.4-standalone: +50 MB
+#   sol-0.8-standalone: +50 MB
+#   sol-0.8-oz-v4: +150 MB (OpenZeppelin)
+#   sol-0.8-oz-v5: +150 MB (OpenZeppelin)
+#   Total: ~1.6 GB for all images
+#
