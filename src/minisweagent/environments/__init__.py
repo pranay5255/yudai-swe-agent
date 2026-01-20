@@ -13,6 +13,7 @@ _ENVIRONMENT_MAPPING = {
     "bubblewrap": "minisweagent.environments.extra.bubblewrap.BubblewrapEnvironment",
     "foundry": "minisweagent.environments.foundry.FoundryEnvironment",
     "foundry_parsed": "minisweagent.environments.extra.foundry_parsed.ParsedFoundryEnvironment",
+    "exploit_foundry": "minisweagent.environments.exploit_environment.ExploitFoundryEnvironment",
 }
 
 
