@@ -74,13 +74,6 @@ Documentation = "https://mini-swe-agent.com/latest/"
 Repository = "https://github.com/SWE-agent/mini-SWE-agent"
 "Bug Tracker" = "https://github.com/SWE-agent/mini-SWE-agent/issues"
 
-[project.scripts]
-mini = "minisweagent.run.mini:app"
-mini-swe-agent = "minisweagent.run.mini:app"
-mini-extra = "minisweagent.run.mini_extra:main"
-mini-e= "minisweagent.run.mini_extra:main"
-mini-security-fix = "minisweagent.run.security_fix:app"
-
 [tool.setuptools]
 include-package-data = true
 
