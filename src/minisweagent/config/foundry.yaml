@@ -482,6 +482,9 @@ environment:
     # Disable interactive prompts
     CI: "true"
 
+    # Suppress Foundry nightly warning
+    FOUNDRY_DISABLE_NIGHTLY_WARNING: "1"
+
     # Note: These should be set by user or forwarded, not hardcoded:
     # ETH_RPC_URL: "https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
     # ETHERSCAN_API_KEY: "YOUR_KEY"

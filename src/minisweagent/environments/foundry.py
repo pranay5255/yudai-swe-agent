@@ -9,7 +9,6 @@ This environment extends DockerEnvironment with Foundry-specific features:
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +55,7 @@ class FoundryEnvironmentConfig(BaseModel):
     env: dict[str, str] = Field(
         default_factory=lambda: {
             "FOUNDRY_PROFILE": "default",
+            "FOUNDRY_DISABLE_NIGHTLY_WARNING": "1",
             "FORCE_COLOR": "1",
             "CI": "true",
             "PAGER": "cat",
@@ -154,15 +154,26 @@ class FoundryEnvironment(DockerEnvironment):
             "anvil_port": self._foundry_config.anvil_port,
         }
 
-    def start_anvil(self, fork_url: str = "", block_number: int | None = None) -> dict[str, Any]:
+    def start_anvil(
+        self,
+        fork_url: str = "",
+        block_number: int | None = None,
+        startup_timeout: int = 60,
+    ) -> dict[str, Any]:
         """Start anvil local testnet in background.
 
         Args:
             fork_url: RPC URL to fork from. Uses config value if not provided.
             block_number: Block number to fork at. Latest if not provided.
+            startup_timeout: Max seconds to wait for Anvil to be ready (default 60).
+                            Historical forks may need longer to initialize.
 
         Returns:
             Execute result dict with output and returncode
+
+        Raises:
+            RuntimeError: If anvil fails to start, with detailed error message
+                         including archive RPC guidance for historical fork failures.
         """
         fork_url = fork_url or self._foundry_config.anvil_fork_url
         port = self._foundry_config.anvil_port
@@ -175,9 +186,207 @@ class FoundryEnvironment(DockerEnvironment):
 
         # Start in background with nohup
         anvil_cmd = " ".join(cmd_parts)
-        background_cmd = f"nohup {anvil_cmd} > /tmp/anvil.log 2>&1 & sleep 2 && echo 'Anvil started on port {port}'"
+        # Use disown to fully detach process from the shell session
+        background_cmd = (
+            f"nohup {anvil_cmd} > /tmp/anvil.log 2>&1 & "
+            f"ANVIL_PID=$!; disown $ANVIL_PID; "
+            f"echo \"Anvil PID: $ANVIL_PID\""
+        )
 
-        return self.execute(background_cmd)
+        self.logger.info(f"Starting Anvil: {anvil_cmd}")
+        result = self.execute(background_cmd)
+
+        # Wait for Anvil to be ready by testing RPC connectivity
+        anvil_status = self._wait_for_anvil_ready(
+            fork_url, block_number, timeout=startup_timeout
+        )
+        if not anvil_status["running"]:
+            error_msg = anvil_status.get("error", "Unknown error")
+            self.logger.error(f"Anvil failed to start: {error_msg}")
+            raise RuntimeError(error_msg)
+
+        self.logger.info(f"Anvil successfully started on port {port}")
+        return result
+
+    def _wait_for_anvil_ready(
+        self,
+        fork_url: str = "",
+        block_number: int | None = None,
+        timeout: int = 60,
+    ) -> dict[str, Any]:
+        """Wait for Anvil to be ready to accept RPC connections.
+
+        Args:
+            fork_url: The fork URL that was used (for error context)
+            block_number: The block number that was requested (for error context)
+            timeout: Maximum seconds to wait for Anvil to be ready
+
+        Returns:
+            Dict with 'running' bool and optional 'error' message
+        """
+        import time
+
+        port = self._foundry_config.anvil_port
+        rpc_url = f"http://127.0.0.1:{port}"
+        poll_interval = 2  # seconds between checks
+        max_attempts = timeout // poll_interval
+
+        self.logger.debug(f"Waiting for Anvil to be ready (timeout: {timeout}s)...")
+
+        for attempt in range(max_attempts):
+            # First check if process is still running
+            ps_result = self.execute("pgrep -f 'anvil.*--port' || echo 'not_running'")
+            ps_output = ps_result.get("output", ps_result.get("raw_output", ""))
+
+            if "not_running" in ps_output or not ps_output.strip():
+                # Process died, get error from log
+                self.logger.debug("Anvil process not found, checking log for errors")
+                log_result = self.execute("cat /tmp/anvil.log 2>/dev/null || echo 'no_log'")
+                log_output = log_result.get("output", log_result.get("raw_output", ""))
+                return self._diagnose_anvil_failure(log_output, fork_url, block_number)
+
+            # Try to make an RPC call to verify Anvil is responding
+            # Use cast chain-id as a simple connectivity test
+            rpc_test = self.execute(
+                f"cast chain-id --rpc-url {rpc_url} 2>&1 || echo 'rpc_failed'"
+            )
+            rpc_output = rpc_test.get("output", rpc_test.get("raw_output", ""))
+
+            # Check if we got a valid chain ID (a number)
+            rpc_output_clean = rpc_output.strip().split("\n")[-1].strip()
+            if rpc_output_clean.isdigit():
+                self.logger.debug(
+                    f"Anvil ready after {(attempt + 1) * poll_interval}s "
+                    f"(chain ID: {rpc_output_clean})"
+                )
+                return {"running": True, "chain_id": int(rpc_output_clean)}
+
+            # Log progress for long waits
+            if attempt > 0 and attempt % 5 == 0:
+                self.logger.info(
+                    f"Still waiting for Anvil to initialize... "
+                    f"({(attempt + 1) * poll_interval}s elapsed)"
+                )
+
+            time.sleep(poll_interval)
+
+        # Timeout reached - get log for diagnosis
+        self.logger.warning(f"Anvil did not become ready within {timeout}s")
+        log_result = self.execute("cat /tmp/anvil.log 2>/dev/null || echo 'no_log'")
+        log_output = log_result.get("output", log_result.get("raw_output", ""))
+
+        # Check if process is still running (might be slow but not dead)
+        ps_result = self.execute("pgrep -f 'anvil.*--port' || echo 'not_running'")
+        ps_output = ps_result.get("output", ps_result.get("raw_output", ""))
+
+        if "not_running" not in ps_output and ps_output.strip():
+            return {
+                "running": False,
+                "error": (
+                    f"Anvil process is running but not responding to RPC after {timeout}s.\n\n"
+                    f"This may indicate:\n"
+                    f"  - Very slow fork initialization (try increasing timeout)\n"
+                    f"  - Network issues connecting to the RPC endpoint\n"
+                    f"  - RPC rate limiting\n\n"
+                    f"Fork URL: {fork_url}\n"
+                    f"Block number: {block_number or 'latest'}\n\n"
+                    f"Anvil log (last 1000 chars):\n{log_output[-1000:]}"
+                ),
+            }
+
+        return self._diagnose_anvil_failure(log_output, fork_url, block_number)
+
+    def _diagnose_anvil_failure(
+        self, log_output: str, fork_url: str, block_number: int | None
+    ) -> dict[str, Any]:
+        """Diagnose why Anvil failed to start based on log output.
+
+        Args:
+            log_output: Contents of /tmp/anvil.log
+            fork_url: The fork URL that was used
+            block_number: The block number that was requested
+
+        Returns:
+            Dict with 'running': False and detailed 'error' message
+        """
+        error_msg = "Anvil failed to start"
+        log_lower = log_output.lower()
+
+        # Common archive RPC error patterns
+        archive_error_patterns = [
+            "missing trie node",
+            "header not found",
+            "block not found",
+            "state not available",
+            "pruned state",
+            "historical state",
+            "archive node",
+            "eth_getproof",
+            "unable to fetch",
+            "data not available",
+        ]
+
+        is_archive_error = any(pattern in log_lower for pattern in archive_error_patterns)
+
+        if is_archive_error and block_number:
+            error_msg = (
+                f"Anvil fork failed at historical block {block_number}.\n\n"
+                f"ERROR: The RPC endpoint '{fork_url}' does not support archive queries.\n\n"
+                "Historical block forking requires an ARCHIVE RPC node that retains full state history.\n"
+                "Public RPCs typically only support recent blocks (~128 blocks back).\n\n"
+                "SOLUTIONS:\n"
+                "  1. Use an archive RPC provider:\n"
+                "     - Alchemy (free tier includes archive): https://www.alchemy.com/\n"
+                "     - Infura (archive plan): https://infura.io/\n"
+                "     - QuickNode (archive): https://www.quicknode.com/\n"
+                "     - GetBlock (archive): https://getblock.io/\n\n"
+                "  2. Configure in your .env file:\n"
+                "     MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY\n"
+                "     BSC_RPC_URL=https://bsc.getblock.io/YOUR_KEY/mainnet/\n\n"
+                "  3. For testing without archive access, try forking at 'latest' block.\n\n"
+                f"Anvil log output:\n{log_output[:500]}"
+            )
+        elif "connection refused" in log_lower or "failed to connect" in log_lower:
+            error_msg = (
+                f"Anvil fork failed: Unable to connect to RPC endpoint.\n\n"
+                f"RPC URL: {fork_url}\n\n"
+                "Check that:\n"
+                "  - The RPC URL is correct and accessible\n"
+                "  - Your network connection is working\n"
+                "  - Any API key in the URL is valid\n\n"
+                f"Anvil log output:\n{log_output[:500]}"
+            )
+        elif "rate limit" in log_lower or "too many requests" in log_lower:
+            error_msg = (
+                f"Anvil fork failed: RPC rate limit exceeded.\n\n"
+                f"RPC URL: {fork_url}\n\n"
+                "The RPC provider is rate-limiting requests. Solutions:\n"
+                "  - Wait a few minutes and retry\n"
+                "  - Use a paid RPC plan with higher limits\n"
+                "  - Use a different RPC provider\n\n"
+                f"Anvil log output:\n{log_output[:500]}"
+            )
+        elif log_output.strip() and "no_log" not in log_output:
+            # Generic failure with log content
+            error_msg = (
+                f"Anvil failed to start.\n\n"
+                f"Fork URL: {fork_url}\n"
+                f"Block number: {block_number or 'latest'}\n\n"
+                f"Anvil log output:\n{log_output[:1000]}"
+            )
+        else:
+            # No log or empty log
+            error_msg = (
+                f"Anvil failed to start (no log output available).\n\n"
+                f"Fork URL: {fork_url}\n"
+                f"Block number: {block_number or 'latest'}\n\n"
+                "Check that:\n"
+                "  - The Docker container is running\n"
+                "  - Anvil is installed in the container\n"
+                "  - The RPC URL is accessible from within the container"
+            )
+
+        return {"running": False, "error": error_msg}
 
     def get_anvil_rpc_url(self) -> str:
         """Get RPC URL for local anvil instance.
