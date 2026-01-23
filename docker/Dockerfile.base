@@ -25,6 +25,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VENV_MAIN=/opt/venv-main \
     VENV_MYTHRIL=/opt/venv-mythril \
     UV_PYTHON=${PYTHON_VERSION} \
+    FOUNDRY_DISABLE_NIGHTLY_WARNING=1 \
     PATH="${VENV_MAIN}/bin:/root/.solc-select:/root/.cargo/bin:/root/.local/bin:${PATH}"
 
 # Install system dependencies including Python 3.12

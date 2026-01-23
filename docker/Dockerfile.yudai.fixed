@@ -13,7 +13,8 @@ ARG PYTHON_VERSION=3.12
 ENV DEBIAN_FRONTEND=noninteractive \
     VENV_MAIN=/opt/venv-main \
     VENV_MYTHRIL=/opt/venv-mythril \
-    UV_PYTHON=${PYTHON_VERSION}
+    UV_PYTHON=${PYTHON_VERSION} \
+    FOUNDRY_DISABLE_NIGHTLY_WARNING=1
 
 # Install system dependencies including Python 3.12
 RUN apt-get update && apt-get install -y --no-install-recommends \
