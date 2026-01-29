@@ -4,10 +4,23 @@
 - **Textual** for the TUI (already in dependencies, full-screen layouts, mouse support, rich widgets, async-friendly).
 - **Typer** for the CLI entrypoint and flags (already in dependencies).
 - **Rich** for non-TUI output and fallback logs.
+- **Reuse existing Textual work**: `src/minisweagent/agents/interactive_textual.py` and `src/minisweagent/run/extra/inspector.py` already provide Textual patterns we can borrow.
 
 ---
 
 ## Step-by-step plan with questions
+
+### 1b) Reuse existing Textual scaffolding
+**Task**: Audit existing Textual usage to avoid re-inventing layout/UX patterns.
+- Review `src/minisweagent/agents/interactive_textual.py` (Textual app patterns).
+- Review `src/minisweagent/run/extra/inspector.py` (simple Textual screen + layout).
+- Decide which widgets/layout styles to reuse for the new exploit TUI.
+
+**Question**: Should we reuse the existing Textual scaffolding (styles/layouts) or build a fresh UI? (single choice)
+- [ ] Reuse existing Textual scaffolding where possible
+- [ ] New UI from scratch, keep only theme/branding hints
+
+---
 
 ### 1) Scope the user journeys and CLI modes
 **Task**: Define the two primary flows and how the user toggles between them.
@@ -38,6 +51,21 @@
 
 ---
 
+### 2b) Wireframe the core screens (ASCII mockups)
+**Task**: Create quick ASCII mockups for the 3–4 most important screens.
+- Mode picker (benchmark vs single vs settings/results/help)
+- Benchmark wizard (case selection + config)
+- Execution monitor (progress, logs, results table)
+- Single episode wizard (contract, fork, balances)
+
+**Question**: Which screens should we wireframe first? (multi-select)
+- [ ] Mode picker
+- [ ] Benchmark wizard
+- [ ] Execution monitor
+- [ ] Single episode wizard
+
+---
+
 ### 3) Agent persona and interaction model
 **Task**: Define the assistant persona voice, confirmation rules, and how it triggers Foundry/Slither actions.
 - Persona: concise helper, asks permission before running commands unless "yolo" is set.
@@ -48,6 +76,18 @@
 - [ ] Ask before every command
 - [ ] Ask only for state-changing commands (cast send, forge script --broadcast)
 - [ ] Always run without confirmation (yolo)
+
+---
+
+### 3b) Module structure + ownership boundaries
+**Task**: Define where UI code lives and how it stays isolated from core logic.
+- Proposed layout (example): `src/minisweagent/ui/` with `components/`, `screens/`, `styles/`.
+- Keep runner logic separate (e.g., `exploit_generation/*`) so CLI and TUI share a clean API.
+
+**Question**: Where should the new TUI code live? (single choice)
+- [ ] `src/minisweagent/ui/` (new package)
+- [ ] `src/minisweagent/tui/` (dedicated package)
+- [ ] Under `src/minisweagent/run/` (alongside CLI commands)
 
 ---
 
@@ -62,6 +102,17 @@
 - [ ] Search + select by case name
 - [ ] Index selector (0-based)
 - [ ] Filter by chain then multi-select cases
+
+---
+
+### 4b) Progress callbacks + runner integration
+**Task**: Decide how the UI gets real-time updates from the benchmark/local runners.
+- Option A: Refactor scripts into importable runner functions with callbacks.
+- Option B: Keep scripts intact and stream stdout/stderr in the TUI.
+
+**Question**: Which integration approach should we take first? (single choice)
+- [ ] Refactor scripts into shared runner functions with callbacks
+- [ ] Wrap scripts as subprocesses and stream logs
 
 ---
 
@@ -175,6 +226,18 @@
 
 ---
 
+### 12b) Optional non-TUI prompts (CLI fallback)
+**Task**: Decide whether to add a non-TUI interactive prompt layer.
+- Use Typer + Rich only (simple flags + help).
+- Optionally add a prompt library for checkbox/multi-select UX outside TUI.
+
+**Question**: Do you want an interactive prompt layer for non-TUI runs? (single choice)
+- [ ] No, keep non-TUI strictly flag-based
+- [ ] Yes, add minimal prompts with existing dependencies only
+- [ ] Yes, add a new prompt library for better multi-select UX
+
+---
+
 ### 13) CLI packaging plan (uv + PyPI)
 **Task**: Define packaging questions and decisions before implementation.
 - Determine package name, CLI command name, versioning strategy
@@ -203,6 +266,20 @@
 
 ---
 
+### 15) Phased implementation plan
+**Task**: Sequence delivery into small milestones so we can demo early.
+- Phase 1: CLI entrypoint + minimal wizard (no TUI)
+- Phase 2: Benchmark + local flows wired to runners
+- Phase 3: Textual TUI screens + live progress
+- Phase 4: Results browser + polish + docs
+
+**Question**: How do you want to time-box the phases? (single choice)
+- [ ] Fast v1 (1–2 weeks, minimal UI)
+- [ ] Balanced (3–4 weeks, full TUI)
+- [ ] Deep polish (4–6+ weeks, UX + docs + packaging)
+
+---
+
 ## Packaging questions to answer before publish
 (These are needed to safely package as a CLI tool with uv.)
 
@@ -224,4 +301,3 @@
 - Local episode requires `OPENROUTER_API_KEY`, `OPENROUTER_MODEL_NAME`, `DEPLOYER_PRIVATE_KEY`/`PRIVATE_KEY`, and `PLAYER_ADDRESS`.
 - Benchmark supports case selection by index or name, chain filters, limit, and caching sources.
 - Local episode expects a contract path (default `contracts/SimpleBank.sol`).
-
