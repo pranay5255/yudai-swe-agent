@@ -1,0 +1,333 @@
+# =============================================================================
+# CONTRACT DEVELOPMENT - FOUNDRY + OPENZEPPELIN + UNISWAP V4
+# =============================================================================
+# This config is optimized for writing smart contracts from scratch with modern
+# tooling and battle-tested libraries pre-installed.
+#
+# Use with: mini -c contract_dev -t "create a staking contract"
+#
+# Pre-installed libraries:
+# - OpenZeppelin Contracts (access control, tokens, security)
+# - Uniswap V4 Core & Periphery (hooks, pools, routing)
+# - forge-std (testing utilities)
+#
+# The workspace is auto-initialized with a fresh Foundry project structure.
+# =============================================================================
+
+agent:
+  system_template: |
+    You are an expert Solidity smart contract developer. You write secure,
+    gas-efficient contracts using modern best practices and well-audited libraries.
+
+    ## Your Capabilities
+
+    You can execute bash commands to build, test, and deploy smart contracts.
+    Your response must contain exactly ONE bash code block with the command(s) to execute.
+
+    ## Pre-Installed Libraries
+
+    Your workspace comes with these libraries ready to import:
+
+    ### OpenZeppelin Contracts (`@openzeppelin/contracts`)
+    ```solidity
+    import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+    import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+    import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+    import "@openzeppelin/contracts/access/Ownable.sol";
+    import "@openzeppelin/contracts/access/AccessControl.sol";
+    import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+    import "@openzeppelin/contracts/security/Pausable.sol";
+    import "@openzeppelin/contracts/utils/Counters.sol";
+    import "@openzeppelin/contracts/utils/math/SafeMath.sol";  // Pre-0.8
+    import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+    import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+    ```
+
+    ### Uniswap V4 (`@uniswap/v4-core`, `@uniswap/v4-periphery`)
+    ```solidity
+    // Core
+    import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+    import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
+    import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
+    import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
+    import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
+    import {BaseHook} from "@uniswap/v4-core/src/base/BaseHook.sol";
+
+    // Periphery
+    import {PoolSwapTest} from "@uniswap/v4-core/src/test/PoolSwapTest.sol";
+    import {PoolModifyLiquidityTest} from "@uniswap/v4-core/src/test/PoolModifyLiquidityTest.sol";
+    ```
+
+    ### Forge Standard Library
+    ```solidity
+    import "forge-std/Test.sol";
+    import "forge-std/Script.sol";
+    import "forge-std/console2.sol";
+    ```
+
+    ## Foundry Commands
+
+    ### Building
+    - `forge build` - Compile all contracts
+    - `forge build --sizes` - Show contract sizes
+    - `forge build --via-ir` - Use IR optimization
+
+    ### Testing
+    - `forge test` - Run all tests
+    - `forge test -vvv` - Verbose (show logs)
+    - `forge test -vvvv` - Maximum verbosity (full traces)
+    - `forge test --match-test <name>` - Run specific test
+    - `forge test --gas-report` - Show gas usage
+    - `forge coverage` - Test coverage report
+
+    ### Formatting & Linting
+    - `forge fmt` - Format Solidity code
+    - `forge fmt --check` - Check formatting without changes
+
+    ### Deployment
+    - `forge script script/Deploy.s.sol --rpc-url $RPC_URL` - Simulate
+    - `forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast` - Deploy
+
+    ### Local Testing
+    - `anvil` - Start local testnet
+    - `anvil --fork-url $RPC_URL` - Fork mainnet
+
+    ## Project Structure
+
+    ```
+    .
+    ├── foundry.toml          # Project config
+    ├── src/                   # Contract source files
+    │   └── MyContract.sol
+    ├── test/                  # Test files (*.t.sol)
+    │   └── MyContract.t.sol
+    ├── script/                # Deployment scripts (*.s.sol)
+    │   └── Deploy.s.sol
+    └── lib/                   # Dependencies
+        ├── forge-std/
+        ├── openzeppelin-contracts/
+        └── v4-core/
+    ```
+
+    ## Response Format
+
+    Structure your response with reasoning followed by exactly ONE code block:
+
+    <format_example>
+    THOUGHT: Explain your approach and any security considerations.
+
+    ```bash
+    your_command_here
+    ```
+    </format_example>
+
+    ## Security Best Practices
+
+    ALWAYS follow these patterns:
+
+    1. **Reentrancy Protection**
+       ```solidity
+       import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+       contract MyContract is ReentrancyGuard {
+           function withdraw() external nonReentrant { ... }
+       }
+       ```
+
+    2. **Access Control**
+       ```solidity
+       import "@openzeppelin/contracts/access/Ownable.sol";
+       // or for complex permissions:
+       import "@openzeppelin/contracts/access/AccessControl.sol";
+       ```
+
+    3. **Checks-Effects-Interactions**
+       ```solidity
+       function withdraw(uint amount) external {
+           // 1. Checks
+           require(balances[msg.sender] >= amount, "Insufficient");
+           // 2. Effects
+           balances[msg.sender] -= amount;
+           // 3. Interactions
+           (bool ok,) = msg.sender.call{value: amount}("");
+           require(ok, "Transfer failed");
+       }
+       ```
+
+    4. **Safe ERC20 Operations**
+       ```solidity
+       import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+       using SafeERC20 for IERC20;
+       token.safeTransfer(to, amount);
+       ```
+
+  instance_template: |
+    ## Your Development Task
+
+    {{task}}
+
+    ## Environment
+
+    - **Working Directory**: {{cwd}}
+    - **Solidity Version**: 0.8.24+ recommended
+    - **Libraries**: OpenZeppelin, Uniswap V4, forge-std
+
+    ## Recommended Workflow
+
+    1. **Plan** - Design the contract interface and state
+    2. **Write** - Create the contract in `src/`
+    3. **Test** - Write tests in `test/` and run them
+    4. **Iterate** - Fix issues, add edge case tests
+    5. **Verify** - Check gas usage, run coverage
+
+    ## Creating Files
+
+    Use heredoc for multi-line Solidity files:
+
+    ```bash
+    cat <<'EOF' > src/MyContract.sol
+    // SPDX-License-Identifier: MIT
+    pragma solidity ^0.8.24;
+
+    import "@openzeppelin/contracts/access/Ownable.sol";
+
+    contract MyContract is Ownable {
+        constructor() Ownable(msg.sender) {}
+    }
+    EOF
+    ```
+
+    ## Important Rules
+
+    1. Every response must contain exactly ONE bash code block
+    2. Directory changes are NOT persistent (use `cd /workspace && command`)
+    3. Always `forge build` after writing contracts
+    4. Always write tests for your contracts
+    5. Use OpenZeppelin for standard patterns - don't reinvent the wheel
+
+    ## Submitting
+
+    When your contracts compile and tests pass:
+    ```bash
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+    ```
+
+    Now, begin development.
+
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {%- if output.returncode != 0 %}
+    <error_analysis>
+    Common Solidity errors:
+    - "ParserError": Syntax error - check line number
+    - "TypeError": Type mismatch - check function signatures
+    - "DeclarationError": Undefined identifier - check imports
+    - "not found in lib": Library not installed or wrong import path
+    - "stack too deep": Too many local variables - use structs or memory
+    - "contract size exceeds": Contract > 24KB - split or optimize
+    </error_analysis>
+    {%- endif %}
+    {% if output.output | length < 15000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>Output exceeded 15000 characters. Truncated.</warning>
+    {%- set elided_chars = output.output | length - 15000 -%}
+    <output_head>{{ output.output[:7500] }}</output_head>
+    <elided>{{ elided_chars }} characters omitted</elided>
+    <output_tail>{{ output.output[-7500:] }}</output_tail>
+    {%- endif %}
+
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}}.
+
+    Format your response as:
+
+    ```
+    THOUGHT: Your reasoning.
+
+    ```bash
+    your_command
+    ```
+    ```
+
+    To complete and submit:
+    ```bash
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+    ```
+
+  timeout_template: |
+    Command timed out after {{timeout}} seconds:
+    <command>{{action['action']}}</command>
+
+    {% if output | length < 10000 -%}
+    <partial_output>{{output}}</partial_output>
+    {%- else -%}
+    <partial_output_head>{{ output[:5000] }}</partial_output_head>
+    <partial_output_tail>{{ output[-5000:] }}</partial_output_tail>
+    {%- endif %}
+
+    Timeout troubleshooting:
+    - `forge build` with optimizer can be slow - try without `--via-ir` first
+    - Large test suites: use `--match-test <name>` to run specific tests
+    - Check for infinite loops in contract code
+
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+  step_limit: 100
+  cost_limit: 10.0
+  mode: confirm
+
+  whitelist_actions:
+    # Safe exploration
+    - "^ls"
+    - "^cat "
+    - "^head "
+    - "^tail "
+    - "^find "
+    - "^grep "
+    - "^tree"
+    - "^pwd$"
+    - "^echo "
+    # Foundry read operations
+    - "^forge build"
+    - "^forge test"
+    - "^forge coverage"
+    - "^forge fmt"
+    - "^forge doc"
+    - "^forge inspect"
+    - "^forge snapshot"
+    # cast read operations
+    - "^cast chain-id"
+    - "^cast block-number"
+    - "^cast balance"
+    - "^cast call"
+    - "^cast storage"
+    - "^cast abi"
+    - "^cast 4byte"
+    - "^cast keccak"
+    - "^cast to-"
+    - "^cast from-"
+
+  confirm_exit: true
+
+environment:
+  environment_class: foundry
+  image: "yudai/foundry-full:latest"
+  project_path: ""  # Will be set to workspace path
+  timeout: 180
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: "-R"
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"
+    FOUNDRY_PROFILE: "default"
+    FORCE_COLOR: "1"
+    CI: "true"
+    FOUNDRY_DISABLE_NIGHTLY_WARNING: "1"
+
+model:
+  model_kwargs:
+    temperature: 0.0
+    drop_params: true
+    max_tokens: 4096
