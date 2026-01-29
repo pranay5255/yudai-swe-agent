@@ -69,6 +69,10 @@ dev = [
     "portkey-ai",
 ]
 
+[project.scripts]
+mini = "minisweagent.run.mini:app"
+mini-blockchain = "minisweagent.run.blockchain:app"
+
 [project.urls]
 Documentation = "https://mini-swe-agent.com/latest/"
 Repository = "https://github.com/SWE-agent/mini-SWE-agent"
@@ -82,7 +86,7 @@ version = {attr = "minisweagent.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src", "."]
-include = ["minisweagent*", "vulnerability_injection*", "dataset*"]
+include = ["minisweagent*", "minisweagent.workspace*", "vulnerability_injection*", "dataset*"]
 
 [tool.setuptools.package-data]
 minisweagent = ["config/**/*"]
