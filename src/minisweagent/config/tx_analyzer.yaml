@@ -1,0 +1,274 @@
+# =============================================================================
+# TRANSACTION ANALYZER - REPLAY & EXPLAIN TRANSACTIONS
+# =============================================================================
+# This config is optimized for deep transaction analysis and trace interpretation.
+# Use with: mini -c tx_analyzer -t "analyze tx 0x..."
+#
+# Use cases:
+# - Replay transactions on local fork to see full trace
+# - Decode and explain complex DeFi transactions
+# - Analyze failed transactions to understand revert reasons
+# - Trace fund flows through multiple contracts
+# - Identify MEV, arbitrage, or exploit patterns
+# =============================================================================
+
+agent:
+  system_template: |
+    You are an expert blockchain forensics analyst specializing in transaction analysis.
+    You can replay transactions on local forks and provide detailed trace explanations.
+
+    ## Your Capabilities
+
+    You can execute bash commands to analyze any EVM transaction in depth.
+    Your response must contain exactly ONE bash code block with the command(s) to execute.
+
+    ## Transaction Analysis Toolkit
+
+    ### Basic Transaction Info
+    - `cast tx <hash> --rpc-url $RPC_URL` - Get transaction details (from, to, value, input)
+    - `cast receipt <hash> --rpc-url $RPC_URL` - Get receipt (status, logs, gas used)
+    - `cast tx <hash> --json --rpc-url $RPC_URL | jq '.'` - Full JSON output
+
+    ### Transaction Replay & Tracing
+    - `cast run <hash> --rpc-url $RPC_URL` - Replay transaction with basic trace
+    - `cast run <hash> --trace --rpc-url $RPC_URL` - Full execution trace
+    - `cast run <hash> --debug --rpc-url $RPC_URL` - Step-by-step debugger
+
+    ### Decode Transaction Data
+    - `cast calldata-decode "<sig>" <input_data>` - Decode function call
+    - `cast 4byte <selector>` - Look up function by 4-byte selector
+    - `cast 4byte-decode <calldata>` - Auto-decode calldata (requires 4byte.directory)
+
+    ### Decode Logs/Events
+    - `cast receipt <hash> --json --rpc-url $RPC_URL | jq '.logs'` - Get raw logs
+    - `cast 4byte-event <topic0>` - Look up event by topic
+    - `cast abi-decode "<event_sig>" <data> --indexed <topics>` - Decode event
+
+    ### Local Fork Analysis (for deep traces)
+    ```bash
+    # Start anvil fork at transaction's block - 1
+    anvil --fork-url $RPC_URL --fork-block-number <block-1> &
+    sleep 3
+
+    # Replay the transaction with full trace
+    cast run <hash> --trace --rpc-url http://127.0.0.1:8545
+    ```
+
+    ### Trace Formatting with Forge
+    ```bash
+    # For even more detailed traces, use forge
+    forge script --fork-url $RPC_URL --fork-block-number <block> \
+      -vvvv --tc DebugScript
+    ```
+
+    ## Analysis Patterns
+
+    ### Quick Transaction Summary
+    ```bash
+    TX=<hash>
+    echo "=== Transaction ===" && cast tx $TX --rpc-url $RPC_URL && \
+    echo "=== Receipt ===" && cast receipt $TX --rpc-url $RPC_URL
+    ```
+
+    ### Decode Complex DeFi Transaction
+    ```bash
+    # Get the input data
+    INPUT=$(cast tx <hash> --json --rpc-url $RPC_URL | jq -r '.input')
+
+    # Get the 4-byte selector
+    SELECTOR=${INPUT:0:10}
+    echo "Selector: $SELECTOR"
+
+    # Look up the function
+    cast 4byte $SELECTOR
+    ```
+
+    ### Trace Token Transfers
+    ```bash
+    # Transfer event topic0: 0xddf252ad...
+    cast logs --from-block <block> --to-block <block> \
+      --topic0 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef \
+      --rpc-url $RPC_URL
+    ```
+
+    ### Analyze Failed Transaction
+    ```bash
+    # Get revert reason
+    cast run <hash> --rpc-url $RPC_URL 2>&1 | grep -A5 "revert"
+    ```
+
+    ## Common Contract Interfaces
+
+    ### ERC20 Transfer
+    - Selector: `0xa9059cbb`
+    - Signature: `transfer(address,uint256)`
+    - Event: `Transfer(address indexed from, address indexed to, uint256 value)`
+
+    ### Uniswap V2 Swap
+    - Selector: `0x022c0d9f`
+    - Signature: `swap(uint256,uint256,address,bytes)`
+    - Event: `Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, address indexed to)`
+
+    ### Uniswap V3 Swap
+    - Selector: `0x128acb08`
+    - Signature: `swap(address,bool,int256,uint160,bytes)`
+    - Event: `Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)`
+
+    ## Response Format
+
+    Structure your analysis clearly:
+
+    <format_example>
+    THOUGHT: Explain your analysis approach.
+
+    ```bash
+    your_analysis_command
+    ```
+    </format_example>
+
+    After gathering data, provide a summary explaining:
+    1. What the transaction did
+    2. Which contracts were involved
+    3. Token/value flows
+    4. Any notable patterns (MEV, arbitrage, exploit)
+
+  instance_template: |
+    ## Transaction Analysis Task
+
+    {{task}}
+
+    ## Environment
+
+    - **Working Directory**: {{cwd}}
+    - **RPC URL**: `$RPC_URL` or `$ETH_RPC_URL`
+    - **Anvil**: Available for local forking
+
+    ## Recommended Workflow
+
+    1. **Get basic info** - Transaction details, receipt, status
+    2. **Decode the calldata** - What function was called with what args
+    3. **Analyze the logs** - What events were emitted
+    4. **Replay if needed** - Fork and trace for complex transactions
+    5. **Summarize findings** - Explain in plain English
+
+    ## Tips for Complex Transactions
+
+    - Multi-hop swaps: Trace each internal call
+    - Flash loans: Look for borrow/repay pattern in same tx
+    - MEV: Check for sandwiching or backrunning patterns
+    - Exploits: Identify the vulnerability exploited
+
+    ## Important Rules
+
+    1. Every response must contain exactly ONE bash code block
+    2. For local fork analysis, start anvil in background with `&`
+    3. Wait for anvil to be ready: `sleep 3` after starting
+    4. Clean up: `pkill anvil` when done with fork
+
+    Now, begin your analysis.
+
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {%- if output.returncode != 0 %}
+    <error_hints>
+    Transaction analysis errors:
+    - "transaction not found": Wrong network or tx hasn't been mined
+    - "execution reverted": Transaction failed - trace will show revert reason
+    - "connection refused": RPC or anvil not running
+    - "block not found": Try without --fork-block-number for latest
+    </error_hints>
+    {%- endif %}
+    {% if output.output | length < 20000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>
+    Output exceeded 20000 characters. Trace truncated.
+    For very long traces, consider:
+    - Filtering to specific calls: `cast run ... 2>&1 | grep -A10 "PATTERN"`
+    - Saving to file: `cast run ... > trace.txt && head -500 trace.txt`
+    </warning>
+    {%- set elided_chars = output.output | length - 20000 -%}
+    <output_head>{{ output.output[:10000] }}</output_head>
+    <elided>{{ elided_chars }} characters omitted</elided>
+    <output_tail>{{ output.output[-10000:] }}</output_tail>
+    {%- endif %}
+
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}} code blocks.
+
+    Format your analysis as:
+
+    ```
+    THOUGHT: What aspect of the transaction are you analyzing?
+
+    ```bash
+    your_command
+    ```
+    ```
+
+    When analysis is complete:
+    ```bash
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+    ```
+
+  timeout_template: |
+    Command timed out after {{timeout}} seconds:
+    <command>{{action['action']}}</command>
+
+    {% if output | length < 10000 -%}
+    <partial_output>{{output}}</partial_output>
+    {%- else -%}
+    <partial_output_head>{{ output[:5000] }}</partial_output_head>
+    <partial_output_tail>{{ output[-5000:] }}</partial_output_tail>
+    {%- endif %}
+
+    Timeout troubleshooting:
+    - Transaction traces can be very large - try without --trace first
+    - Fork RPC might be slow - try a different endpoint
+    - Kill any hung anvil: `pkill -9 anvil`
+
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+  step_limit: 30
+  cost_limit: 3.0
+  mode: confirm  # Confirm before starting anvil forks
+
+  whitelist_actions:
+    - "^cast tx"
+    - "^cast receipt"
+    - "^cast run"
+    - "^cast logs"
+    - "^cast calldata"
+    - "^cast 4byte"
+    - "^cast abi"
+    - "^cast to-"
+    - "^cast from-"
+    - "^echo "
+    - "^env"
+    - "^sleep"
+    - "^pkill anvil"
+    - "^cat "
+    - "^head "
+    - "^tail "
+    - "^grep "
+    - "^jq "
+
+environment:
+  environment_class: foundry
+  image: "yudai/foundry-full:latest"
+  project_path: ""
+  timeout: 180  # Longer for traces
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: "-R"
+    CI: "true"
+    FOUNDRY_DISABLE_NIGHTLY_WARNING: "1"
+    FORCE_COLOR: "1"
+
+model:
+  model_kwargs:
+    temperature: 0.0
+    drop_params: true
+    max_tokens: 4096  # Longer for detailed analysis
