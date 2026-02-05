@@ -23,7 +23,11 @@ agent:
     3. Compile: `forge build`
     4. Finish with: `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
 
-  action_observation_template: |
+  step_limit: 50
+  cost_limit: 5.0
+
+model:
+  observation_template: |
     <returncode>{{output.returncode}}</returncode>
     {% if output.output | length < 15000 -%}
     <output>
@@ -43,16 +47,7 @@ agent:
     your_command_here
     ```
 
-  timeout_template: |
-    Command timed out after {{timeout}} seconds:
-    <command>{{action['action']}}</command>
-    <partial_output>{{output}}</partial_output>
-
   action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
-  step_limit: 50
-  cost_limit: 5.0
-
-model:
   model_class: openrouter
   model_name: "openai/gpt-4o-mini"
   model_kwargs:

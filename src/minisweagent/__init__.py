@@ -8,7 +8,7 @@ This file provides:
   unless you want the static type checking.
 """
 
-__version__ = "1.17.3"
+__version__ = "2.0.0"
 
 import os
 from pathlib import Path
@@ -42,12 +42,16 @@ class Model(Protocol):
     """Protocol for language models."""
 
     config: Any
-    cost: float
-    n_calls: int
 
-    def query(self, messages: list[dict[str, str]], **kwargs) -> dict: ...
+    def query(self, messages: list[dict[str, Any]], tools: list[dict] | None = None, **kwargs) -> dict: ...
+
+    def format_message(self, role: str, content: str, **kwargs) -> dict: ...
+
+    def format_observation_messages(self, observation: list[dict], *, message: dict | None = None) -> list[dict]: ...
 
     def get_template_vars(self) -> dict[str, Any]: ...
+
+    def serialize(self) -> dict[str, Any]: ...
 
 
 class Environment(Protocol):
@@ -55,9 +59,13 @@ class Environment(Protocol):
 
     config: Any
 
-    def execute(self, command: str, cwd: str = "") -> dict[str, str]: ...
+    def execute(self, action: dict, cwd: str = "") -> dict[str, Any]: ...
 
     def get_template_vars(self) -> dict[str, Any]: ...
+
+    def get_tools(self) -> list[dict]: ...
+
+    def serialize(self) -> dict[str, Any]: ...
 
 
 class Agent(Protocol):
@@ -65,10 +73,12 @@ class Agent(Protocol):
 
     model: Model
     env: Environment
-    messages: list[dict[str, str]]
+    messages: list[dict[str, Any]]
     config: Any
 
-    def run(self, task: str, **kwargs) -> tuple[str, str]: ...
+    def run(self, task: str, **kwargs) -> dict: ...
+
+    def save(self, *, exit_info: dict | None = None, **kwargs) -> dict: ...
 
 
 __all__ = [

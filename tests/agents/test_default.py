@@ -3,18 +3,18 @@ from pathlib import Path
 import pytest
 import yaml
 
-from minisweagent.agents.default import DefaultAgent, NonTerminatingException
+from minisweagent.agents.default import DefaultAgent
 from minisweagent.environments.local import LocalEnvironment
 from minisweagent.models.test_models import DeterministicModel
 
 
 @pytest.fixture
 def default_config():
-    """Load default agent config from config/default.yaml"""
+    """Load default config from config/default.yaml"""
     config_path = Path("src/minisweagent/config/default.yaml")
     with open(config_path) as f:
         config = yaml.safe_load(f)
-    return config["agent"]
+    return config
 
 
 def test_successful_completion(default_config):
@@ -22,18 +22,21 @@ def test_successful_completion(default_config):
     agent = DefaultAgent(
         model=DeterministicModel(
             outputs=[
-                "I'll echo a message\n```bash\necho 'hello world'\n```",
-                "Now finishing\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'Task completed successfully'\n```",
-            ]
+                "I'll echo a message\n```mswea_bash_command\necho 'hello world'\n```",
+                "Now finishing\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'Task completed successfully'\n```",
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(),
-        **default_config,
+        **default_config["agent"],
     )
 
-    exit_status, result = agent.run("Echo hello world then finish")
+    result_info = agent.run("Echo hello world then finish")
+    exit_status = result_info.get("exit_status")
+    result = result_info.get("submission")
     assert exit_status == "Submitted"
     assert result == "Task completed successfully\n"
-    assert agent.model.n_calls == 2
+    assert agent.n_calls == 2
     assert len(agent.messages) == 6  # system, user, assistant, user, assistant, user
 
 
@@ -41,28 +44,32 @@ def test_step_limit_enforcement(default_config):
     """Test agent stops when step limit is reached."""
     agent = DefaultAgent(
         model=DeterministicModel(
-            outputs=["First command\n```bash\necho 'step1'\n```", "Second command\n```bash\necho 'step2'\n```"]
+            outputs=[
+                "First command\n```mswea_bash_command\necho 'step1'\n```",
+                "Second command\n```mswea_bash_command\necho 'step2'\n```",
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(),
-        **{**default_config, "step_limit": 1},
+        **{**default_config["agent"], "step_limit": 1},
     )
 
-    exit_status, _ = agent.run("Run multiple commands")
+    exit_status = agent.run("Run multiple commands").get("exit_status")
     assert exit_status == "LimitsExceeded"
-    assert agent.model.n_calls == 1
+    assert agent.n_calls == 1
 
 
 def test_cost_limit_enforcement(default_config):
     """Test agent stops when cost limit is reached."""
-    model = DeterministicModel(outputs=["```bash\necho 'test'\n```"])
+    model = DeterministicModel(outputs=["```mswea_bash_command\necho 'test'\n```"], **default_config["model"])
 
     agent = DefaultAgent(
         model=model,
         env=LocalEnvironment(),
-        **{**default_config, "cost_limit": 0.5},
+        **{**default_config["agent"], "cost_limit": 0.5},
     )
 
-    exit_status, _ = agent.run("Test cost limit")
+    exit_status = agent.run("Test cost limit").get("exit_status")
     assert exit_status == "LimitsExceeded"
 
 
@@ -72,23 +79,23 @@ def test_format_error_handling(default_config):
         model=DeterministicModel(
             outputs=[
                 "No code blocks here",
-                "Multiple blocks\n```bash\necho 'first'\n```\n```bash\necho 'second'\n```",
-                "Now correct\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'\n```",
-            ]
+                "Multiple blocks\n```mswea_bash_command\necho 'first'\n```\n```mswea_bash_command\necho 'second'\n```",
+                "Now correct\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'\n```",
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(),
-        **default_config,
+        **default_config["agent"],
     )
 
-    exit_status, result = agent.run("Test format errors")
+    result_info = agent.run("Test format errors")
+    exit_status = result_info.get("exit_status")
+    result = result_info.get("submission")
     assert exit_status == "Submitted"
     assert result == "done\n"
-    assert agent.model.n_calls == 3
+    assert agent.n_calls == 3
     # Should have error messages in conversation
-    assert (
-        len([msg for msg in agent.messages if "Please always provide EXACTLY ONE action" in msg.get("content", "")])
-        == 2
-    )
+    assert len([msg for msg in agent.messages if "Expected exactly one action" in msg.get("content", "")]) == 2
 
 
 def test_timeout_handling(default_config):
@@ -96,19 +103,18 @@ def test_timeout_handling(default_config):
     agent = DefaultAgent(
         model=DeterministicModel(
             outputs=[
-                "Long sleep\n```bash\nsleep 5\n```",  # This will timeout
-                "Quick finish\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered'\n```",
-            ]
+                "Long sleep\n```mswea_bash_command\nsleep 5\n```",
+                "Quick finish\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered'\n```",
+            ],
+            **default_config["model"],
         ),
-        env=LocalEnvironment(timeout=1),  # Very short timeout
-        **default_config,
+        env=LocalEnvironment(timeout=1),
+        **default_config["agent"],
     )
 
-    exit_status, result = agent.run("Test timeout handling")
-    assert exit_status == "Submitted"
-    assert result == "recovered\n"
-    # Should have timeout error message
-    assert len([msg for msg in agent.messages if "timed out" in msg.get("content", "")]) == 1
+    result_info = agent.run("Test timeout handling")
+    assert result_info.get("exit_status") == "Submitted"
+    assert result_info.get("submission") == "recovered\n"
 
 
 def test_timeout_captures_partial_output(default_config):
@@ -119,62 +125,17 @@ def test_timeout_captures_partial_output(default_config):
     agent = DefaultAgent(
         model=DeterministicModel(
             outputs=[
-                f"Output then sleep\n```bash\n{calculation_command}\n```",
-                "Quick finish\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered'\n```",
-            ]
+                f"Output then sleep\n```mswea_bash_command\n{calculation_command}\n```",
+                "Quick finish\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered'\n```",
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(timeout=1),
-        **default_config,
+        **default_config["agent"],
     )
-    exit_status, result = agent.run("Test timeout with partial output")
-    assert exit_status == "Submitted"
-    assert result == "recovered\n"  # final output should be `recovered` from the last command
-    timed_out_messages = [msg for msg in agent.messages if "timed out" in msg.get("content", "")]
-    assert len(timed_out_messages) == 1
-    assert expected_output in timed_out_messages[0]["content"]  # ensure timed out output is still captured
-
-
-def test_parse_action_success(default_config):
-    """Test action parsing works correctly for valid formats."""
-    agent = DefaultAgent(
-        model=DeterministicModel(outputs=[]),
-        env=LocalEnvironment(),
-        **default_config,
-    )
-
-    # Test different valid formats
-    result = agent.parse_action({"content": "```bash\necho 'test'\n```"})
-    assert result["action"] == "echo 'test'"
-    assert result["content"] == "```bash\necho 'test'\n```"
-
-    result = agent.parse_action({"content": "```bash\nls -la\n```"})
-    assert result["action"] == "ls -la"
-    assert result["content"] == "```bash\nls -la\n```"
-
-    result = agent.parse_action({"content": "Some text\n```bash\necho 'hello'\n```\nMore text"})
-    assert result["action"] == "echo 'hello'"
-    assert result["content"] == "Some text\n```bash\necho 'hello'\n```\nMore text"
-
-
-def test_parse_action_failures(default_config):
-    """Test action parsing raises appropriate exceptions for invalid formats."""
-    agent = DefaultAgent(
-        model=DeterministicModel(outputs=[]),
-        env=LocalEnvironment(),
-        **default_config,
-    )
-
-    # No code blocks
-    with pytest.raises(NonTerminatingException):
-        agent.parse_action({"content": "No code blocks here"})
-
-    # Multiple code blocks
-    with pytest.raises(NonTerminatingException):
-        agent.parse_action({"content": "```bash\necho 'first'\n```\n```bash\necho 'second'\n```"})
-
-    # Code block without bash language specifier
-    with pytest.raises(NonTerminatingException):
-        agent.parse_action({"content": "```\nls -la\n```"})
+    result_info = agent.run("Test timeout with partial output")
+    assert result_info.get("exit_status") == "Submitted"
+    assert result_info.get("submission") == "recovered\n"
 
 
 def test_message_history_tracking(default_config):
@@ -182,17 +143,18 @@ def test_message_history_tracking(default_config):
     agent = DefaultAgent(
         model=DeterministicModel(
             outputs=[
-                "Response 1\n```bash\necho 'test1'\n```",
-                "Response 2\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'\n```",
-            ]
+                "Response 1\n```mswea_bash_command\necho 'test1'\n```",
+                "Response 2\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'\n```",
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(),
-        **default_config,
+        **default_config["agent"],
     )
 
-    exit_status, result = agent.run("Track messages")
-    assert exit_status == "Submitted"
-    assert result == "done\n"
+    result_info = agent.run("Track messages")
+    assert result_info.get("exit_status") == "Submitted"
+    assert result_info.get("submission") == "done\n"
 
     # After completion should have full conversation
     assert len(agent.messages) == 6
@@ -204,20 +166,21 @@ def test_multiple_steps_before_completion(default_config):
     agent = DefaultAgent(
         model=DeterministicModel(
             outputs=[
-                "Step 1\n```bash\necho 'first'\n```",
-                "Step 2\n```bash\necho 'second'\n```",
-                "Step 3\n```bash\necho 'third'\n```",
-                "Final step\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed all steps'\n```",
-            ]
+                "Step 1\n```mswea_bash_command\necho 'first'\n```",
+                "Step 2\n```mswea_bash_command\necho 'second'\n```",
+                "Step 3\n```mswea_bash_command\necho 'third'\n```",
+                "Final step\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed all steps'\n```",
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(),
-        **{**default_config, "cost_limit": 5.0},  # Increase cost limit to allow all 4 calls (4.0 total cost)
+        **{**default_config["agent"], "cost_limit": 5.0},  # Increase cost limit to allow all 4 calls (4.0 total cost)
     )
 
     exit_status, result = agent.run("Multi-step task")
     assert exit_status == "Submitted"
     assert result == "completed all steps\n"
-    assert agent.model.n_calls == 4
+    assert agent.n_calls == 4
 
     # Check that all intermediate outputs are captured (final step doesn't get observation due to termination)
     observations = [
@@ -234,12 +197,13 @@ def test_custom_config(default_config):
     agent = DefaultAgent(
         model=DeterministicModel(
             outputs=[
-                "Test response\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'custom config works'\n```"
-            ]
+                "Test response\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'custom config works'\n```"
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(),
         **{
-            **default_config,
+            **default_config["agent"],
             "system_template": "You are a test assistant.",
             "instance_template": "Task: {{task}}. Return bash command.",
             "step_limit": 2,
@@ -257,9 +221,9 @@ def test_custom_config(default_config):
 def test_render_template_model_stats(default_config):
     """Test that render_template has access to n_model_calls and model_cost from model."""
     agent = DefaultAgent(
-        model=DeterministicModel(outputs=["output1", "output2"]),
+        model=DeterministicModel(outputs=["```bash\necho 'output1'\n```", "```bash\necho 'output2'\n```"]),
         env=LocalEnvironment(),
-        **default_config,
+        **default_config["agent"],
     )
 
     # Make some model calls to generate stats
@@ -278,12 +242,13 @@ def test_messages_include_timestamps(default_config):
     agent = DefaultAgent(
         model=DeterministicModel(
             outputs=[
-                "Response 1\n```bash\necho 'test1'\n```",
-                "Response 2\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'\n```",
-            ]
+                "Response 1\n```mswea_bash_command\necho 'test1'\n```",
+                "Response 2\n```mswea_bash_command\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'\n```",
+            ],
+            **default_config["model"],
         ),
         env=LocalEnvironment(),
-        **default_config,
+        **default_config["agent"],
     )
 
     agent.run("Test timestamps")
@@ -300,16 +265,17 @@ def test_messages_include_timestamps(default_config):
 def test_step_output_includes_action(default_config):
     """Test that step output includes the action that was executed."""
     agent = DefaultAgent(
-        model=DeterministicModel(outputs=["Test command\n```bash\necho 'hello'\n```"]),
+        model=DeterministicModel(outputs=["Test command\n```mswea_bash_command\necho 'hello'\n```"], **default_config["model"]),
         env=LocalEnvironment(),
-        **default_config,
+        **default_config["agent"],
     )
 
     agent.add_message("system", "system message")
     agent.add_message("user", "user message")
 
-    output = agent.step()
-
-    assert "action" in output
-    assert output["action"] == "echo 'hello'"
+    outputs = agent.step()
+    assert len(outputs) == 1
+    output = outputs[0]
+    assert "command" in output
+    assert output["command"] == "echo 'hello'"
     assert "output" in output

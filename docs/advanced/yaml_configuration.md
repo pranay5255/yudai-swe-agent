@@ -85,12 +85,13 @@ In all builtin agents, you can use the following variables:
 
 ### Custom Action Parsing
 
-By default, mini-SWE-agent parses actions from markdown code blocks (` ```bash...``` `).
-You can customize this behavior by setting the `action_regex` field to support different formats like XML.
+By default, mini-SWE-agent uses tool calling. If you want text-based parsing, set a
+`model.action_regex` and use a text-based model class (for example `litellm_textbased`).
+You can customize the text format (e.g., XML) by updating the regex.
 
 !!! warning "Important"
 
-    If you set a custom action_regex (e.g. `<action>(.*?)</action>`), you must use the same output format across all prompt templates (system_template, instance_template, format_error_template, etc.), ensuring the LLM wraps commands accordingly. See the example below for a complete configuration.
+    If you set a custom `action_regex` (e.g. `<action>(.*?)</action>`), you must use the same output format across all prompt templates (system_template, instance_template, format_error_template, etc.), ensuring the LLM wraps commands accordingly. See the example below for a complete configuration.
 
 
 ??? example "Using XML format instead of markdown"
@@ -106,16 +107,17 @@ You can customize this behavior by setting the `action_regex` field to support d
 
 ??? example "Default markdown format"
 
-    This is the default configuration (already the default, you don't need to specify this):
-
+    This is an example text-based configuration (tool calling is the default):
 
     ```yaml
+    model:
+      model_class: litellm_textbased
+      action_regex: ```mswea_bash_command\s*\n(.*?)\n```
     agent:
-      action_regex: ```bash\s*\n(.*?)\n```
       system_template: |
-        Your response must contain exactly ONE bash code block.
+        Your response must contain exactly ONE `mswea_bash_command` code block.
 
-        ```bash
+        ```mswea_bash_command
         your_command_here
         ```
     ```

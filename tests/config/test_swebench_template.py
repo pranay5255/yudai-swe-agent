@@ -23,7 +23,7 @@ def test_action_observation_template_short_output():
         config = yaml.safe_load(f)
 
     # Extract the template
-    template_str = config["agent"]["action_observation_template"]
+    template_str = config["model"]["observation_template"]
     template = Template(template_str, undefined=StrictUndefined)
 
     # Create mock output with short content
@@ -54,7 +54,7 @@ def test_action_observation_template_long_output():
         config = yaml.safe_load(f)
 
     # Extract the template
-    template_str = config["agent"]["action_observation_template"]
+    template_str = config["model"]["observation_template"]
     template = Template(template_str, undefined=StrictUndefined)
 
     # Create mock output with long content
@@ -99,7 +99,7 @@ def test_action_observation_template_edge_case_exactly_10000_chars():
         config = yaml.safe_load(f)
 
     # Extract the template
-    template_str = config["agent"]["action_observation_template"]
+    template_str = config["model"]["observation_template"]
     template = Template(template_str, undefined=StrictUndefined)
 
     # Use a large amount of data that will definitely exceed 10000 chars when rendered
@@ -125,7 +125,7 @@ def test_action_observation_template_just_under_10000_chars():
         config = yaml.safe_load(f)
 
     # Extract the template
-    template_str = config["agent"]["action_observation_template"]
+    template_str = config["model"]["observation_template"]
     template = Template(template_str, undefined=StrictUndefined)
 
     # Use a reasonably sized output that should be well under 10000 chars when rendered
@@ -143,7 +143,7 @@ def test_action_observation_template_just_under_10000_chars():
 
 
 def test_agent_config_requires_templates():
-    """Test that AgentConfig now requires all template fields (no defaults in code)"""
+    """Test that AgentConfig now requires template fields (no defaults in code)"""
     import pytest
     from pydantic import ValidationError
 
@@ -151,55 +151,3 @@ def test_agent_config_requires_templates():
     with pytest.raises(ValidationError, match="validation error"):
         AgentConfig()
 
-
-def test_timeout_template_config_with_truncation():
-    """Test that config files have timeout templates with truncation"""
-    from pathlib import Path
-
-    import yaml
-
-    config_files = [
-        Path("src/minisweagent/config/default.yaml"),
-        Path("src/minisweagent/config/mini.yaml"),
-        Path("src/minisweagent/config/github_issue.yaml"),
-        Path("src/minisweagent/config/extra/swebench.yaml"),
-        Path("src/minisweagent/config/extra/swebench_xml.yaml"),
-        Path("src/minisweagent/config/extra/swebench_roulette.yaml"),
-    ]
-
-    for config_file in config_files:
-        with open(config_file) as f:
-            config = yaml.safe_load(f)
-
-        timeout_template = config.get("agent", {}).get("timeout_template")
-        assert timeout_template is not None, f"{config_file} missing timeout_template"
-
-        # Verify it has truncation logic
-        template = Template(timeout_template, undefined=StrictUndefined)
-        action = {"action": "grep -R pattern ."}
-        long_output = "START_" + "A" * 8000 + "B" * 3000 + "_END"
-
-        result = template.render(action=action, output=long_output)
-
-        # Should contain truncation elements for long output
-        assert "<warning>" in result, f"{config_file} missing truncation"
-        assert "has been truncated" in result
-        assert "<output_head>" in result
-        assert "<elided_chars>" in result
-        assert "characters elided" in result
-        assert "<output_tail>" in result
-
-        # Verify the head contains first part of output
-        assert "START_" in result
-        assert "AAAA" in result
-
-        # Verify the tail contains last part of output
-        assert "_END" in result
-        assert "BBBB" in result
-
-        # Should still contain basic timeout message
-        assert "<command>grep -R pattern .</command>" in result
-        assert "timed out" in result
-
-        # Result should be bounded (not grow with input size)
-        assert len(result) < 15000

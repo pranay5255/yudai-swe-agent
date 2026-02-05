@@ -36,7 +36,7 @@ You can override the default entry point by setting the `MSWEA_DEFAULT_RUN` envi
     ```python
     from minisweagent.agents.default import DefaultAgent
     from minisweagent.models import get_model
-    from minisweagent.environments.local import LocalEnvironment
+    from minisweagent.environments.local import LocalEnvironment, LocalEnvironmentConfig
 
     model_name = "anthropic/claude-sonnet-4-5-20250929"
 
@@ -235,12 +235,12 @@ An agent that validates actions before execution (also an example of how to use 
     ```python
     import re
     from dataclasses import dataclass
-    from minisweagent.agents.default import (
-        DefaultAgent, NonTerminatingException, DefaultAgentConfig
-    )
+    from minisweagent.agents.default import DefaultAgent, AgentConfig
+    from minisweagent.exceptions import UserInterruption
+    from minisweagent.utils.actions import get_action_command
 
     @dataclass
-    class ValidatingAgentConfig(DefaultAgentConfig):
+    class ValidatingAgentConfig(AgentConfig):
         forbidden_patterns: list[str] = [
             r"rm -rf /",
             r"sudo.*passwd",
@@ -252,9 +252,10 @@ An agent that validates actions before execution (also an example of how to use 
             super().__init__(*args, **kwargs, config_class=ValidatingAgentConfig)
 
         def execute_action(self, action: dict) -> dict:
+            command = get_action_command(action)
             for pattern in self.config.forbidden_patterns:
-                if re.search(pattern, action["action"], re.IGNORECASE):
-                    raise NonTerminatingException("Action blocked")
+                if re.search(pattern, command, re.IGNORECASE):
+                    raise UserInterruption("Action blocked")
             return super().execute_action(action)
     ```
 
@@ -263,10 +264,10 @@ An agent that validates actions before execution (also an example of how to use 
     ```python
     import re
     from dataclasses import dataclass
-    from minisweagent.agents.default import (
-        DefaultAgent, NonTerminatingException, DefaultAgentConfig
-    )
+    from minisweagent.agents.default import DefaultAgent, AgentConfig
     from minisweagent.environments.local import LocalEnvironment
+    from minisweagent.exceptions import UserInterruption
+    from minisweagent.utils.actions import get_action_command
 
     @dataclass
     class EnvironmentWithForbiddenPatternsConfig(LocalEnvironmentConfig):
@@ -280,11 +281,12 @@ An agent that validates actions before execution (also an example of how to use 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs, config_class=EnvironmentWithForbiddenPatternsConfig)
 
-        def execute(self, command: str, cwd: str = "") -> dict:
+        def execute(self, action: dict, cwd: str = "") -> dict:
+            command = get_action_command(action)
             for pattern in self.config.forbidden_patterns:
                 if re.search(pattern, command, re.IGNORECASE):
-                    raise NonTerminatingException("Action blocked")
-            return super().execute(command, cwd)
+                    raise UserInterruption("Action blocked")
+            return super().execute(action, cwd)
 
     agent = DefaultAgent(
         LitellmModel(model_name=model_name),

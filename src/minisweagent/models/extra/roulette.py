@@ -17,6 +17,7 @@ class RouletteModel:
         """This "meta"-model randomly selects one of the models at every call"""
         self.config = config_class(**kwargs)
         self.models = [get_model(config=config) for config in self.config.model_kwargs]
+        self._last_model: Model | None = None
 
     @property
     def cost(self) -> float:
@@ -34,9 +35,21 @@ class RouletteModel:
 
     def query(self, *args, **kwargs) -> dict:
         model = self.select_model()
+        self._last_model = model
         response = model.query(*args, **kwargs)
         response["model_name"] = model.config.model_name
         return response
+
+    def format_message(self, role: str, content: str, **kwargs) -> dict:
+        # Use the first model as default formatter for system/user messages.
+        return self.models[0].format_message(role, content, **kwargs)
+
+    def format_observation_messages(self, observation: list[dict], *, message: dict | None = None) -> list[dict]:
+        model = self._last_model or self.models[0]
+        return model.format_observation_messages(observation, message=message)
+
+    def serialize(self) -> dict:
+        return self.config.model_dump()
 
 
 class InterleavingModelConfig(BaseModel):

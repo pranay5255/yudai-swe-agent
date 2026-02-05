@@ -30,7 +30,6 @@ or to update specific settings:
 mini-extra config set KEY VALUE
 # e.g.,
 mini-extra config set MSWEA_MODEL_NAME "anthropic/claude-sonnet-4-5-20250929"
-mini-extra config set MSWEA_MODEL_API_KEY "sk-..."
 ```
 
 or to unset a key:
@@ -38,7 +37,6 @@ or to unset a key:
 ```bash
 mini-extra config unset KEY
 # e.g.,
-mini-extra config unset MSWEA_MODEL_API_KEY
 ```
 
 You can also edit the `.env` file directly and we provide a helper function for that:
@@ -66,9 +64,9 @@ setx KEY "value"
 # (default: not set)
 MSWEA_MODEL_NAME="anthropic/claude-sonnet-4-5-20250929"
 
-# Default API key
-# (default: not set)
-MSWEA_MODEL_API_KEY="sk-..."
+## API keys
+
+Set provider-specific API keys such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, etc.
 ```
 
 To ignore errors from cost tracking checks (for example for free models), set:
@@ -119,9 +117,6 @@ MSWEA_GITHUB_CONFIG_PATH="/path/to/your/github/config.yaml"
 # (default: package_dir / "config" / "mini.tcss")
 MSWEA_INSPECTOR_STYLE_PATH="/path/to/your/inspector/style.tcss"
 
-# Custom style path for mini textual interface
-# (default: package_dir / "config" / "mini.tcss")
-MSWEA_MINI_STYLE_PATH="/path/to/your/mini/style.tcss"
 ```
 
 ### Settings for environments
@@ -147,9 +142,6 @@ MSWEA_BUBBLEWRAP_EXECUTABLE="bwrap"
 # (default: "minisweagent.run.mini")
 MSWEA_DEFAULT_RUN="minisweagent.run.mini"
 
-# Set to true to use visual mode by default for the main CLI
-# (default: false)
-MSWEA_VISUAL_MODE_DEFAULT="false"
 ```
 
 {% include-markdown "_footer.md" %}

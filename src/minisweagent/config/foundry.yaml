@@ -201,125 +201,6 @@ agent:
     Now, begin by exploring the project to understand what exists.
 
   # ---------------------------------------------------------------------------
-  # ACTION OBSERVATION TEMPLATE
-  # ---------------------------------------------------------------------------
-  # How command output is formatted and shown back to the agent.
-  #
-  # RECOMMENDATION: Include Foundry-specific error hints and keep output
-  # manageable (Solidity compilation can be verbose). 15000 chars is good
-  # for most forge outputs while avoiding token bloat.
-  # ---------------------------------------------------------------------------
-  action_observation_template: |
-    <returncode>{{output.returncode}}</returncode>
-    {%- if output.returncode != 0 %}
-    <error_analysis>
-    Common Foundry error patterns:
-    - "ParserError" / "TypeError": Solidity syntax or type error - check the line number
-    - "CompilerError": Usually missing imports or wrong pragma version
-    - "Arithmetic over/underflow": Use unchecked{} block if intentional
-    - "EvmError: Revert": Transaction reverted - check require/revert conditions
-    - "Setup failed": Test setUp() function has an error
-    - "contract creation code storage out of gas": Contract too large (>24KB)
-    - "RPC error" / "connection refused": Check ETH_RPC_URL or start anvil
-    </error_analysis>
-    {%- endif %}
-    {% if output.output | length < 15000 -%}
-    <output>
-    {{ output.output -}}
-    </output>
-    {%- else -%}
-    <warning>
-    Output exceeded 15000 characters and was truncated.
-    For large outputs:
-    - Use `forge test --match-test <name>` to run specific tests
-    - Use `forge build 2>&1 | head -100` to limit output
-    - Redirect to file: `forge test > output.txt && tail -50 output.txt`
-    </warning>
-    {%- set elided_chars = output.output | length - 15000 -%}
-    <output_head>
-    {{ output.output[:7500] }}
-    </output_head>
-    <elided>{{ elided_chars }} characters omitted</elided>
-    <output_tail>
-    {{ output.output[-7500:] }}
-    </output_tail>
-    {%- endif %}
-
-  # ---------------------------------------------------------------------------
-  # FORMAT ERROR TEMPLATE
-  # ---------------------------------------------------------------------------
-  # Shown when the agent's response doesn't match the expected format
-  # (e.g., no code block, or multiple code blocks).
-  #
-  # RECOMMENDATION: Be explicit about the exact format needed. Foundry agents
-  # might try to write multiple commands or forget the bash block.
-  # ---------------------------------------------------------------------------
-  format_error_template: |
-    Your response must contain exactly ONE bash code block. Found {{actions|length}} code blocks.
-
-    Please format your response as:
-
-    ```
-    THOUGHT: Your reasoning here.
-
-    ```bash
-    single_command_here
-    ```
-    ```
-
-    If you need to run multiple commands, chain them:
-    ```bash
-    command1 && command2 && command3
-    ```
-
-    To finish and submit your work:
-    ```bash
-    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
-    ```
-
-    Do NOT include multiple separate code blocks in one response.
-
-  # ---------------------------------------------------------------------------
-  # TIMEOUT TEMPLATE
-  # ---------------------------------------------------------------------------
-  # Shown when a command exceeds the timeout limit.
-  #
-  # RECOMMENDATION: Foundry compilation and tests can take time. Suggest
-  # alternatives for long-running operations.
-  # ---------------------------------------------------------------------------
-  timeout_template: |
-    Command timed out after {{timeout}} seconds and was terminated:
-    <command>{{action['action']}}</command>
-
-    {% if output | length < 10000 -%}
-    <partial_output>
-    {{output}}
-    </partial_output>
-    {%- else -%}
-    <partial_output_head>{{ output[:5000] }}</partial_output_head>
-    <elided>{{ output | length - 10000 }} characters omitted</elided>
-    <partial_output_tail>{{ output[-5000:] }}</partial_output_tail>
-    {%- endif %}
-
-    Suggestions for timeout issues:
-    - For `forge build`: Try `forge build --no-cache` or check for infinite loops
-    - For `forge test`: Use `--match-test <name>` to run fewer tests
-    - For RPC calls: Check network connectivity, try a different RPC endpoint
-    - For `anvil --fork-url`: Forking large state can be slow, try `--fork-block-number`
-    - Consider running long operations in background: `command &`
-
-  # ---------------------------------------------------------------------------
-  # ACTION REGEX
-  # ---------------------------------------------------------------------------
-  # Regex pattern to extract commands from the agent's response.
-  # The first capture group becomes the command to execute.
-  #
-  # RECOMMENDATION: Match ```bash or ```sh blocks. The 's' flag (DOTALL)
-  # is applied automatically to match across newlines.
-  # ---------------------------------------------------------------------------
-  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
-
-  # ---------------------------------------------------------------------------
   # STEP LIMIT
   # ---------------------------------------------------------------------------
   # Maximum number of LLM calls before stopping. 0 = unlimited.
@@ -498,6 +379,69 @@ environment:
 # =============================================================================
 
 model:
+  model_class: litellm_textbased
+  observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {%- if output.returncode != 0 %}
+    <error_analysis>
+    Common Foundry error patterns:
+    - "ParserError" / "TypeError": Solidity syntax or type error - check the line number
+    - "CompilerError": Usually missing imports or wrong pragma version
+    - "Arithmetic over/underflow": Use unchecked{} block if intentional
+    - "EvmError: Revert": Transaction reverted - check require/revert conditions
+    - "Setup failed": Test setUp() function has an error
+    - "contract creation code storage out of gas": Contract too large (>24KB)
+    - "RPC error" / "connection refused": Check ETH_RPC_URL or start anvil
+    </error_analysis>
+    {%- endif %}
+    {% if output.output | length < 15000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>
+    Output exceeded 15000 characters and was truncated.
+    For large outputs:
+    - Use `forge test --match-test <name>` to run specific tests
+    - Use `forge build 2>&1 | head -100` to limit output
+    - Redirect to file: `forge test > output.txt && tail -50 output.txt`
+    </warning>
+    {%- set elided_chars = output.output | length - 15000 -%}
+    <output_head>
+    {{ output.output[:7500] }}
+    </output_head>
+    <elided>{{ elided_chars }} characters omitted</elided>
+    <output_tail>
+    {{ output.output[-7500:] }}
+    </output_tail>
+    {%- endif %}
+
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}} code blocks.
+
+    Please format your response as:
+
+    ```
+    THOUGHT: Your reasoning here.
+
+    ```bash
+    single_command_here
+    ```
+    ```
+
+    If you need to run multiple commands, chain them:
+    ```bash
+    command1 && command2 && command3
+    ```
+
+    To finish and submit your work:
+    ```bash
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+    ```
+
+    Do NOT include multiple separate code blocks in one response.
+
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
   # ---------------------------------------------------------------------------
   # MODEL KWARGS
   # ---------------------------------------------------------------------------

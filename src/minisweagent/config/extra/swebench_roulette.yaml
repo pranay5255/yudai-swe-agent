@@ -169,7 +169,22 @@ agent:
     This command will submit your work.
     You cannot continue working (reading, editing, testing) in any way on this task after submitting.
     </instructions>
-  action_observation_template: |
+  step_limit: 250
+  cost_limit: 3.
+
+environment:
+  cwd: "/testbed"
+  timeout: 60
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: -R
+    PIP_PROGRESS_BAR: 'off'
+    TQDM_DISABLE: '1'
+  environment_class: docker
+
+model:
+  observation_template: |
     <returncode>{{output.returncode}}</returncode>
     {% if output.output | length < 10000 -%}
     <output>
@@ -209,43 +224,13 @@ agent:
 
     If you have completed your assignment, please consult the first message about how to
     submit your solution (you will not be able to continue working on this task after that).
-  timeout_template: |
-    The last command <command>{{action['action']}}</command> timed out and has been killed.
-    The output of the command was:
-    {% if output | length < 10000 -%}
-    <output>
-    {{output}}
-    </output>
-    {%- else -%}
-    <warning>Output was too long and has been truncated.</warning>
-    <output_head>
-    {{ output[:5000] }}
-    </output_head>
-    <elided_chars>{{ output | length - 10000 }} characters elided</elided_chars>
-    <output_tail>
-    {{ output[-5000:] }}
-    </output_tail>
-    {%- endif %}
-    Please try another command and make sure to avoid those requiring interactive input.
-  step_limit: 250
-  cost_limit: 3.
-
-environment:
-  cwd: "/testbed"
-  timeout: 60
-  env:
-    PAGER: cat
-    MANPAGER: cat
-    LESS: -R
-    PIP_PROGRESS_BAR: 'off'
-    TQDM_DISABLE: '1'
-  environment_class: docker
-
-model:
+  action_regex: ```bash\s*\n(.*?)\n```
   model_name: "roulette"
   model_class: "minisweagent.models.extra.roulette.RouletteModel"
   model_kwargs:
     - model_name: "anthropic/claude-sonnet-4-5-20250929"
+      model_class: litellm_textbased
       model_kwargs:
         temperature: 0.
     - model_name: "gpt-5"
+      model_class: litellm_textbased

@@ -13,17 +13,16 @@ def test_local_end_to_end(local_test_data):
 
     with (
         patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.models.litellm_model.LitellmModel") as mock_model_class,
+        patch("minisweagent.run.mini.get_model") as mock_get_model,
         patch("minisweagent.agents.interactive.prompt_session.prompt", return_value=""),  # No new task
     ):
-        mock_model_class.return_value = DeterministicModel(outputs=model_responses)
+        mock_get_model.return_value = DeterministicModel(outputs=model_responses)
         agent = main(
             model_name="tardis",
             config_spec=DEFAULT_CONFIG,
             yolo=True,
             task="Blah blah blah",
             output=None,
-            visual=False,
             cost_limit=10,
             model_class=None,
         )  # type: ignore
@@ -38,6 +37,6 @@ def test_local_end_to_end(local_test_data):
 
     assert_observations_match(expected_observations, messages)
 
-    assert agent.model.n_calls == len(model_responses), (
-        f"Expected {len(model_responses)} steps, got {agent.model.n_calls}"
+    assert agent.n_calls == len(model_responses), (
+        f"Expected {len(model_responses)} steps, got {agent.n_calls}"
     )

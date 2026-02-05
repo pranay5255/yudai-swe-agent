@@ -12,10 +12,10 @@ def test_run_hello_world_end_to_end(local_test_data):
     expected_observations = local_test_data["expected_observations"]
 
     with (
-        patch("minisweagent.run.hello_world.LitellmModel") as mock_model_class,
+        patch("minisweagent.run.hello_world.get_model") as mock_get_model,
         patch("os.environ", {"MSWEA_MODEL_NAME": "tardis"}),
     ):
-        mock_model_class.return_value = DeterministicModel(outputs=model_responses)
+        mock_get_model.return_value = DeterministicModel(outputs=model_responses)
         agent = main(task="Blah blah blah")
 
     assert agent is not None
@@ -28,6 +28,6 @@ def test_run_hello_world_end_to_end(local_test_data):
 
     assert_observations_match(expected_observations, messages)
 
-    assert agent.model.n_calls == len(model_responses), (
-        f"Expected {len(model_responses)} steps, got {agent.model.n_calls}"
+    assert agent.n_calls == len(model_responses), (
+        f"Expected {len(model_responses)} steps, got {agent.n_calls}"
     )

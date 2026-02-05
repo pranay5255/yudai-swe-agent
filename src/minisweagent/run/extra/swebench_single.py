@@ -30,7 +30,7 @@ def main(
     split: str = typer.Option("dev", "--split", help="Dataset split", rich_help_panel="Data selection"),
     instance_spec: str = typer.Option(0, "-i", "--instance", help="SWE-Bench instance ID or index", rich_help_panel="Data selection"),
     model_name: str | None = typer.Option(None, "-m", "--model", help="Model to use", rich_help_panel="Basic"),
-    model_class: str | None = typer.Option(None, "-c", "--model-class", help="Model class to use (e.g., 'anthropic' or 'minisweagent.models.anthropic.AnthropicModel')", rich_help_panel="Advanced"),
+    model_class: str | None = typer.Option(None, "-c", "--model-class", help="Model class to use (e.g., 'litellm_textbased' or 'minisweagent.models.litellm_textbased_model.LitellmTextBasedModel')", rich_help_panel="Advanced"),
     config_path: Path = typer.Option( builtin_config_dir / "extra" / "swebench.yaml", "-c", "--config", help="Path to a config file", rich_help_panel="Basic"),
     environment_class: str | None = typer.Option(None, "--environment-class", rich_help_panel="Advanced"),
     exit_immediately: bool = typer.Option( False, "--exit-immediately", help="Exit immediately when the agent wants to finish instead of prompting.", rich_help_panel="Basic"),
@@ -66,7 +66,10 @@ def main(
 
     exit_status, result, extra_info = None, None, None
     try:
-        exit_status, result = agent.run(instance["problem_statement"])  # type: ignore[arg-type]
+        exit_info = agent.run(instance["problem_statement"])  # type: ignore[arg-type]
+        exit_status = exit_info.get("exit_status")
+        result = exit_info.get("submission")
+        extra_info = {k: v for k, v in exit_info.items() if k not in {"exit_status", "submission"}}
     except Exception as e:
         logger.error(f"Error processing instance {instance_spec}: {e}", exc_info=True)
         exit_status, result = type(e).__name__, str(e)

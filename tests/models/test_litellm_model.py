@@ -6,7 +6,6 @@ from unittest.mock import Mock, patch
 import litellm
 import pytest
 
-from minisweagent.models import GLOBAL_MODEL_STATS
 from minisweagent.models.litellm_model import LitellmModel
 from minisweagent.models.litellm_response_api_model import LitellmResponseAPIModel
 from minisweagent.models.utils.openai_utils import coerce_responses_text
@@ -85,8 +84,6 @@ def test_litellm_model_cost_tracking_ignore_errors():
     """Test that models work with cost_tracking='ignore_errors'."""
     model = LitellmModel(model_name="gpt-4o", cost_tracking="ignore_errors")
 
-    initial_cost = GLOBAL_MODEL_STATS.cost
-
     with patch("litellm.completion") as mock_completion:
         mock_response = Mock()
         mock_response.choices = [Mock(message=Mock(content="Test response"))]
@@ -100,7 +97,6 @@ def test_litellm_model_cost_tracking_ignore_errors():
             assert result["content"] == "Test response"
             assert model.cost == 0.0
             assert model.n_calls == 1
-            assert GLOBAL_MODEL_STATS.cost == initial_cost
 
 
 def test_litellm_model_cost_validation_zero_cost():

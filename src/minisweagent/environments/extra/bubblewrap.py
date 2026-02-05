@@ -22,6 +22,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from minisweagent.models.utils.actions_toolcall import BASH_TOOL
+from minisweagent.utils.actions import get_action_command
+
 
 class BubblewrapEnvironmentConfig(BaseModel):
     cwd: str = ""
@@ -75,8 +78,9 @@ class BubblewrapEnvironment:
         self.working_dir = Path(tempfile.gettempdir()) / f"minisweagent-{uuid.uuid4().hex[:8]}"
         self.working_dir.mkdir(parents=True)
 
-    def execute(self, command: str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
+    def execute(self, action: dict | str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
         """Execute a command in the bubblewrap environment and return the result as a dict."""
+        command = get_action_command(action)
         cwd = cwd or self.config.cwd or str(self.working_dir)
 
         cmd = [self.config.executable] + self.config.wrapper_args + ["--bind", cwd, cwd, "--chdir", cwd]
@@ -87,16 +91,20 @@ class BubblewrapEnvironment:
 
         cmd.extend(["bash", "-c", command])
 
-        result = subprocess.run(
-            cmd,
-            text=True,
-            timeout=timeout or self.config.timeout,
-            encoding="utf-8",
-            errors="replace",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        return {"output": result.stdout, "returncode": result.returncode}
+        try:
+            result = subprocess.run(
+                cmd,
+                text=True,
+                timeout=timeout or self.config.timeout,
+                encoding="utf-8",
+                errors="replace",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            return {"output": result.stdout, "returncode": result.returncode, "command": command}
+        except subprocess.TimeoutExpired as e:
+            output = e.output.decode("utf-8", errors="replace") if isinstance(e.output, bytes) else (e.output or "")
+            return {"output": output, "returncode": 124, "command": command, "timed_out": True}
 
     def cleanup(self):
         if self.working_dir.exists():
@@ -108,3 +116,9 @@ class BubblewrapEnvironment:
 
     def get_template_vars(self) -> dict[str, Any]:
         return self.config.model_dump() | platform.uname()._asdict()
+
+    def get_tools(self) -> list[dict]:
+        return [BASH_TOOL]
+
+    def serialize(self) -> dict[str, Any]:
+        return self.config.model_dump()

@@ -43,7 +43,7 @@ def main(
     issue_url: str = typer.Option(prompt="Enter GitHub issue URL", help="GitHub issue URL"),
     config: Path = typer.Option(DEFAULT_CONFIG, "-c", "--config", help="Path to config file"),
     model: str | None = typer.Option(None, "-m", "--model", help="Model to use"),
-    model_class: str | None = typer.Option(None, "--model-class", help="Model class to use (e.g., 'anthropic' or 'minisweagent.models.anthropic.AnthropicModel')", rich_help_panel="Advanced"),
+    model_class: str | None = typer.Option(None, "--model-class", help="Model class to use (e.g., 'litellm_textbased' or 'minisweagent.models.litellm_textbased_model.LitellmTextBasedModel')", rich_help_panel="Advanced"),
     yolo: bool = typer.Option(False, "-y", "--yolo", help="Run without confirmation"),
 ) -> InteractiveAgent:
     # fmt: on
@@ -73,13 +73,16 @@ def main(
 
     agent.env.execute(f"git clone {repo_url} /testbed", cwd="/")
 
-    exit_status, result = None, None
+    exit_status, result, extra_info = None, None, None
     try:
-        exit_status, result = agent.run(task)
+        exit_info = agent.run(task)
+        exit_status = exit_info.get("exit_status")
+        result = exit_info.get("submission")
+        extra_info = {k: v for k, v in exit_info.items() if k not in {"exit_status", "submission"}}
     except KeyboardInterrupt:
         console.print("\n[bold red]KeyboardInterrupt -- goodbye[/bold red]")
     finally:
-        save_traj(agent, Path("traj.json"), exit_status=exit_status, result=result)
+        save_traj(agent, Path("traj.json"), exit_status=exit_status, result=result, extra_info=extra_info)
     return agent
 
 

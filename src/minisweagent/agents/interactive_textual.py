@@ -23,7 +23,10 @@ from textual.events import Key
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Input, Static, TextArea
 
-from minisweagent.agents.default import AgentConfig, DefaultAgent, NonTerminatingException, Submitted
+from minisweagent.agents.default import AgentConfig, DefaultAgent
+from minisweagent.exceptions import Submitted, UserInterruption
+from minisweagent.models.utils.actions_toolcall import build_tool_call
+from minisweagent.utils.actions import get_action_command
 
 
 class TextualAgentConfig(AgentConfig):
@@ -51,36 +54,41 @@ class _TextualAgent(DefaultAgent):
         if self.config.mode == "human":
             human_input = self.app.input_container.request_input("Enter your command:")
             self._current_action_from_human = True
-            msg = {"content": f"\n```bash\n{human_input}\n```"}
-            self.add_message("assistant", msg["content"])
-            return msg
+            message = self._build_human_action_message(human_input)
+            self.messages.append(message)
+            return message
         self._current_action_from_human = False
         return super().query()
 
-    def run(self, task: str, **kwargs) -> tuple[str, str]:
+    def run(self, task: str, **kwargs) -> dict:
         try:
-            exit_status, result = super().run(task, **kwargs)
+            exit_info = super().run(task, **kwargs)
         except Exception as e:
             result = str(e)
             self.app.call_from_thread(self.app.action_quit)
             print(traceback.format_exc())
-            return "ERROR", result
+            return {"exit_status": "ERROR", "submission": result}
         else:
-            self.app.call_from_thread(self.app.on_agent_finished, exit_status, result)
+            self.app.call_from_thread(
+                self.app.on_agent_finished,
+                exit_info.get("exit_status"),
+                exit_info.get("submission", ""),
+            )
         self.app.call_from_thread(self.app.action_quit)
-        return exit_status, result
+        return exit_info
 
     def execute_action(self, action: dict) -> dict:
         if self.config.mode == "human" and not self._current_action_from_human:  # threading, grrrrr
-            raise NonTerminatingException("Command not executed because user switched to manual mode.")
+            raise UserInterruption("Command not executed because user switched to manual mode.")
+        command = get_action_command(action)
         if (
             self.config.mode == "confirm"
-            and action["action"].strip()
-            and not any(re.match(r, action["action"]) for r in self.config.whitelist_actions)
+            and command.strip()
+            and not any(re.match(r, command) for r in self.config.whitelist_actions)
         ):
             result = self.app.input_container.request_input("Press ENTER to confirm or provide rejection reason")
             if result:  # Non-empty string means rejection
-                raise NonTerminatingException(f"Command not executed: {result}")
+                raise UserInterruption(f"Command not executed: {result}")
         return super().execute_action(action)
 
     def has_finished(self, output: dict[str, str]):
@@ -92,8 +100,17 @@ class _TextualAgent(DefaultAgent):
                     "[bold green]Agent wants to finish.[/bold green] "
                     "[green]Type a comment to give it a new task or press enter to quit.\n"
                 ).strip():
-                    raise NonTerminatingException(f"The user added a new task: {new_task}")
+                    raise UserInterruption(f"The user added a new task: {new_task}")
             raise e
+
+    def _build_human_action_message(self, command: str) -> dict:
+        action = {"tool": "bash", "command": command, "action": command}
+        if hasattr(self.model.config, "action_regex"):
+            content = f"```mswea_bash_command\n{command}\n```"
+            return self.model.format_message("assistant", content, actions=[action], timestamp=time.time())
+        tool_call = build_tool_call(command)
+        action["tool_call_id"] = tool_call["id"]
+        return self.model.format_message("assistant", "", tool_calls=[tool_call], actions=[action], timestamp=time.time())
 
 
 class AddLogEmitCallback(logging.Handler):
@@ -387,7 +404,7 @@ class TextualAgent(App):
         if self.agent_state == "RUNNING":
             spinner_frame = str(self._spinner.render(time.time())).strip()
             status_text = f"{self.agent_state} {spinner_frame}"
-        self.title = f"Step {self.i_step + 1}/{self.n_steps} - {status_text} - Cost: ${self.agent.model.cost:.2f}"
+        self.title = f"Step {self.i_step + 1}/{self.n_steps} - {status_text} - Cost: ${self.agent.cost:.2f}"
         try:
             self.query_one("Header").set_class(self.agent_state == "RUNNING", "running")
         except NoMatches:  # might be called when shutting down

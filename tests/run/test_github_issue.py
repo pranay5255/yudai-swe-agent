@@ -60,7 +60,7 @@ def test_configure_if_first_time_called():
         mock_yaml_load.return_value = {"agent": {}, "environment": {}, "model": {}}
         mock_get_config_path.return_value.read_text.return_value = "test config"
         mock_agent_instance = mock_agent.return_value
-        mock_agent_instance.run.return_value = (0, "success")
+        mock_agent_instance.run.return_value = {"exit_status": "Success", "submission": "success"}
         mock_agent_instance.env.execute.return_value = None
 
         main(issue_url="https://github.com/test/repo/issues/1", config=DEFAULT_CONFIG, model="test-model", yolo=True)
@@ -94,6 +94,6 @@ def test_github_issue_end_to_end(github_test_data):
 
     assert_observations_match(expected_observations, messages)
 
-    assert agent.model.n_calls == len(model_responses), (
-        f"Expected {len(model_responses)} steps, got {agent.model.n_calls}"
+    assert agent.n_calls == len(model_responses), (
+        f"Expected {len(model_responses)} steps, got {agent.n_calls}"
     )

@@ -7,6 +7,7 @@ There are three modes:
 """
 
 import re
+import time
 from typing import Literal
 
 from prompt_toolkit.history import FileHistory
@@ -15,7 +16,10 @@ from rich.console import Console
 from rich.rule import Rule
 
 from minisweagent import global_config_dir
-from minisweagent.agents.default import AgentConfig, DefaultAgent, LimitsExceeded, NonTerminatingException, Submitted
+from minisweagent.agents.default import AgentConfig, DefaultAgent
+from minisweagent.exceptions import LimitsExceeded, Submitted, UserInterruption
+from minisweagent.models.utils.actions_toolcall import build_tool_call
+from minisweagent.utils.actions import get_action_command
 
 console = Console(highlight=False)
 prompt_session = PromptSession(history=FileHistory(global_config_dir / "interactive_history.txt"))
@@ -42,7 +46,7 @@ class InteractiveAgent(DefaultAgent):
         super().add_message(role, content, **kwargs)
         if role == "assistant":
             console.print(
-                f"\n[red][bold]mini-swe-agent[/bold] (step [bold]{self.model.n_calls}[/bold], [bold]${self.model.cost:.2f}[/bold]):[/red]\n",
+                f"\n[red][bold]mini-swe-agent[/bold] (step [bold]{self.n_calls}[/bold], [bold]${self.cost:.2f}[/bold]):[/red]\n",
                 end="",
                 highlight=False,
             )
@@ -57,16 +61,16 @@ class InteractiveAgent(DefaultAgent):
                 case "/y" | "/c":  # Just go to the super query, which queries the LM for the next action
                     pass
                 case _:
-                    msg = {"content": f"\n```bash\n{command}\n```"}
-                    self.add_message("assistant", msg["content"])
-                    return msg
+                    message = self._build_human_action_message(command)
+                    self.messages.append(message)
+                    return message
         try:
             with console.status("Waiting for the LM to respond..."):
                 return super().query()
         except LimitsExceeded:
             console.print(
                 f"Limits exceeded. Limits: {self.config.step_limit} steps, ${self.config.cost_limit}.\n"
-                f"Current spend: {self.model.n_calls} steps, ${self.model.cost:.2f}."
+                f"Current spend: {self.n_calls} steps, ${self.cost:.2f}."
             )
             self.config.step_limit = int(input("New step limit: "))
             self.config.cost_limit = float(input("New cost limit: "))
@@ -86,11 +90,12 @@ class InteractiveAgent(DefaultAgent):
             ).strip()
             if not interruption_message or interruption_message in self._MODE_COMMANDS_MAPPING:
                 interruption_message = "Temporary interruption caught."
-            raise NonTerminatingException(f"Interrupted by user: {interruption_message}")
+            raise UserInterruption(f"Interrupted by user: {interruption_message}")
 
     def execute_action(self, action: dict) -> dict:
         # Override the execute_action method to handle user confirmation
-        if self.should_ask_confirmation(action["action"]):
+        command = get_action_command(action)
+        if self.should_ask_confirmation(command):
             self.ask_confirmation()
         return super().execute_action(action)
 
@@ -107,9 +112,9 @@ class InteractiveAgent(DefaultAgent):
             case "" | "/y":
                 pass  # confirmed, do nothing
             case "/u":  # Skip execution action and get back to query
-                raise NonTerminatingException("Command not executed. Switching to human mode")
+                raise UserInterruption("Command not executed. Switching to human mode")
             case _:
-                raise NonTerminatingException(
+                raise UserInterruption(
                     f"Command not executed. The user rejected your command with the following message: {user_input}"
                 )
 
@@ -147,5 +152,14 @@ class InteractiveAgent(DefaultAgent):
                     end="",
                 )
                 if new_task := self._prompt_and_handle_special("").strip():
-                    raise NonTerminatingException(f"The user added a new task: {new_task}")
+                    raise UserInterruption(f"The user added a new task: {new_task}")
             raise e
+
+    def _build_human_action_message(self, command: str) -> dict:
+        action = {"tool": "bash", "command": command, "action": command}
+        if hasattr(self.model.config, "action_regex"):
+            content = f"```mswea_bash_command\n{command}\n```"
+            return self.model.format_message("assistant", content, actions=[action], timestamp=time.time())
+        tool_call = build_tool_call(command)
+        action["tool_call_id"] = tool_call["id"]
+        return self.model.format_message("assistant", "", tool_calls=[tool_call], actions=[action], timestamp=time.time())

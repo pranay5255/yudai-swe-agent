@@ -55,7 +55,7 @@ def test_save_traj_includes_class_names():
         # Verify other expected data is still present
         assert saved_data["info"]["exit_status"] == "Submitted"
         assert saved_data["info"]["submission"] == "test result"
-        assert saved_data["trajectory_format"] == "mini-swe-agent-1"
+        assert saved_data["trajectory_format"] == "mini-swe-agent-2"
 
 
 def test_save_traj_with_none_agent():

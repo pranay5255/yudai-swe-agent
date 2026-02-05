@@ -49,16 +49,16 @@ src/minisweagent/
 ### Agent Loop (default.py)
 
 1. Initialize with system message + task template
-2. Loop: `query()` → `parse_action()` (extract bash from markdown) → `execute_action()` → `has_finished()`
-3. `NonTerminatingException` (format errors, timeouts) → continue with error message
-4. `TerminatingException` (Submitted, LimitsExceeded) → exit with status
+2. Loop: `query()` → model parses actions/tool calls → `execute_action()` → `has_finished()`
+3. `FormatError` / `UserInterruption` → add message and continue
+4. `Submitted` / `LimitsExceeded` → exit with status
 
-Agent signals completion by outputting `MINI_SWE_AGENT_FINAL_OUTPUT` or `COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
+Agent signals completion by outputting `COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.
 
 ### Protocols
 
-Models must implement: `query(messages) → dict`, `get_template_vars() → dict`, plus `cost`/`n_calls` attributes.
-Environments must implement: `execute(command) → dict`, `get_template_vars() → dict`.
+Models must implement: `query(messages, tools) → dict`, `format_message()`, `format_observation_messages()`, `get_template_vars()`, `serialize()`.
+Environments must implement: `execute(action) → dict`, `get_template_vars()`, `get_tools()`, `serialize()`.
 
 ## Code Style
 

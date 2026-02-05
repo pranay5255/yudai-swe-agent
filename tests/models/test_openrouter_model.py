@@ -16,7 +16,7 @@ from minisweagent.models.openrouter_model import (
 def mock_response():
     """Create a mock successful OpenRouter API response."""
     return {
-        "choices": [{"message": {"content": "Hello! 2+2 equals 4."}}],
+        "choices": [{"message": {"content": "```mswea_bash_command\necho 'hi'\n```"}}],
         "usage": {
             "prompt_tokens": 16,
             "completion_tokens": 13,
@@ -37,7 +37,7 @@ def mock_response():
 def mock_response_no_cost():
     """Create a mock OpenRouter API response without cost information."""
     return {
-        "choices": [{"message": {"content": "Hello! 2+2 equals 4."}}],
+        "choices": [{"message": {"content": "```mswea_bash_command\necho 'hi'\n```"}}],
         "usage": {"prompt_tokens": 16, "completion_tokens": 13, "total_tokens": 29},
     }
 
@@ -78,7 +78,7 @@ def test_openrouter_model_successful_query(mock_response):
             assert payload["temperature"] == 0.7
 
             # Verify response
-            assert result["content"] == "Hello! 2+2 equals 4."
+            assert result["content"] == "```mswea_bash_command\necho 'hi'\n```"
             assert result["extra"]["response"] == mock_response
 
             # Verify cost tracking
@@ -148,7 +148,7 @@ def test_openrouter_model_free_model_zero_cost(mock_response_no_cost):
             result = model.query(messages)
 
             # Verify response
-            assert result["content"] == "Hello! 2+2 equals 4."
+            assert result["content"] == "```mswea_bash_command\necho 'hi'\n```"
             assert result["extra"]["response"] == mock_response_no_cost
 
             # Verify cost tracking with zero cost (not added to global stats when zero)

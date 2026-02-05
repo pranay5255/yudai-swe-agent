@@ -388,8 +388,17 @@ class ExceptionModel:
         self.n_calls += 1
         raise self.exception_type(self.exception_message)
 
+    def format_message(self, role: str, content: str, **kwargs) -> dict:
+        return {"role": role, "content": content, **kwargs}
+
+    def format_observation_messages(self, observation: list[dict], *, message: dict | None = None) -> list[dict]:
+        return [{"role": "user", "content": output.get("output", "")} for output in observation]
+
     def get_template_vars(self) -> dict[str, Any]:
         return self.config.model_dump() | {"n_model_calls": self.n_calls, "model_cost": self.cost}
+
+    def serialize(self) -> dict[str, Any]:
+        return self.config.model_dump()
 
 
 @pytest.mark.slow

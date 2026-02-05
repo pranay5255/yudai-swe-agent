@@ -32,11 +32,11 @@ def test_configure_if_first_time_called():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "environment": {}, "model": {}}
 
         # Setup mock agent instance
         mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function
@@ -46,7 +46,6 @@ def test_configure_if_first_time_called():
             task="Test task",
             yolo=False,
             output=None,
-            visual=False,
             model_class=None,
         )
 
@@ -55,7 +54,6 @@ def test_configure_if_first_time_called():
 
 
 def test_mini_command_calls_run_interactive():
-    """Test that mini command creates InteractiveAgent when visual=False."""
     with (
         patch("minisweagent.run.mini.configure_if_first_time"),
         patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
@@ -72,11 +70,11 @@ def test_mini_command_calls_run_interactive():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "environment": {}, "model": {}}
 
         # Setup mock agent instance
         mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function with task provided (so prompt is not called)
@@ -86,7 +84,6 @@ def test_mini_command_calls_run_interactive():
             task="Test task",
             yolo=False,
             output=None,
-            visual=False,
             model_class=None,
         )
 
@@ -98,50 +95,6 @@ def test_mini_command_calls_run_interactive():
         # Verify agent.run was called with the task
         mock_agent.run.assert_called_once_with("Test task")
 
-
-def test_mini_v_command_calls_run_textual():
-    """Test that mini -v command creates TextualAgent when visual=True."""
-    with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.TextualAgent") as mock_textual_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
-    ):
-        # Setup mocks
-        mock_model = Mock()
-        mock_get_model.return_value = mock_model
-        mock_environment = Mock()
-        mock_env.return_value = mock_environment
-        mock_config_path = Mock()
-        mock_config_path.read_text.return_value = ""
-        mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
-
-        # Setup mock agent instance
-        mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
-        mock_textual_agent_class.return_value = mock_agent
-
-        # Call main function with visual=True and task provided
-        main(
-            config_spec=DEFAULT_CONFIG,
-            model_name="test-model",
-            task="Test task",
-            yolo=False,
-            output=None,
-            visual=True,
-            model_class=None,
-        )
-
-        # Verify TextualAgent was instantiated
-        mock_textual_agent_class.assert_called_once()
-        args, kwargs = mock_textual_agent_class.call_args
-        assert args[0] == mock_model  # model
-        assert args[1] == mock_environment  # env
-        # Verify agent.run was called with the task
-        mock_agent.run.assert_called_once_with("Test task")
 
 
 def test_mini_calls_prompt_when_no_task_provided():
@@ -164,11 +117,11 @@ def test_mini_calls_prompt_when_no_task_provided():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "environment": {}, "model": {}}
 
         # Setup mock agent instance
         mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function without task
@@ -178,7 +131,6 @@ def test_mini_calls_prompt_when_no_task_provided():
             task=None,  # No task provided
             yolo=False,
             output=None,
-            visual=False,
             model_class=None,
         )
 
@@ -190,52 +142,6 @@ def test_mini_calls_prompt_when_no_task_provided():
         # Verify agent.run was called with the task from prompt
         mock_agent.run.assert_called_once_with("User provided task")
 
-
-def test_mini_v_calls_prompt_when_no_task_provided():
-    """Test that mini -v calls prompt when no task is provided."""
-    with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.prompt_session.prompt") as mock_prompt,
-        patch("minisweagent.run.mini.TextualAgent") as mock_textual_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
-    ):
-        # Setup mocks
-        mock_prompt.return_value = "User provided visual task"
-        mock_model = Mock()
-        mock_get_model.return_value = mock_model
-        mock_environment = Mock()
-        mock_env.return_value = mock_environment
-        mock_config_path = Mock()
-        mock_config_path.read_text.return_value = ""
-        mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
-
-        # Setup mock agent instance
-        mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
-        mock_textual_agent_class.return_value = mock_agent
-
-        # Call main function with visual=True but no task
-        main(
-            config_spec=DEFAULT_CONFIG,
-            model_name="test-model",
-            task=None,  # No task provided
-            yolo=False,
-            output=None,
-            visual=True,
-            model_class=None,
-        )
-
-        # Verify prompt was called
-        mock_prompt.assert_called_once()
-
-        # Verify TextualAgent was instantiated
-        mock_textual_agent_class.assert_called_once()
-        # Verify agent.run was called with the task from prompt
-        mock_agent.run.assert_called_once_with("User provided visual task")
 
 
 def test_mini_with_explicit_model():
@@ -258,13 +164,13 @@ def test_mini_with_explicit_model():
         mock_get_config_path.return_value = mock_config_path
         mock_yaml_load.return_value = {
             "agent": {"system_template": "test", "mode": "yolo"},
-            "env": {},
+            "environment": {},
             "model": {"default_config": "test"},
         }
 
         # Setup mock agent instance
         mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function with explicit model
@@ -274,7 +180,6 @@ def test_mini_with_explicit_model():
             task="Test task with explicit model",
             yolo=True,
             output=None,
-            visual=False,
             model_class=None,
         )
 
@@ -305,11 +210,11 @@ def test_yolo_mode_sets_correct_agent_config():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "environment": {}, "model": {}}
 
         # Setup mock agent instance
         mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function with yolo=True
@@ -319,7 +224,6 @@ def test_yolo_mode_sets_correct_agent_config():
             task="Test yolo task",
             yolo=True,
             output=None,
-            visual=False,
             model_class=None,
         )
 
@@ -350,11 +254,11 @@ def test_confirm_mode_sets_correct_agent_config():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "environment": {}, "model": {}}
 
         # Setup mock agent instance
         mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function with yolo=False (default)
@@ -364,7 +268,6 @@ def test_confirm_mode_sets_correct_agent_config():
             task="Test confirm task",
             yolo=False,
             output=None,
-            visual=False,
             model_class=None,
         )
 
@@ -396,7 +299,6 @@ def test_mini_help():
     assert "--task" in clean_output
     assert "--yolo" in clean_output
     assert "--output" in clean_output
-    assert "--visual" in clean_output
 
 
 def test_mini_help_with_typer_runner():
@@ -416,7 +318,6 @@ def test_mini_help_with_typer_runner():
     assert "--task" in clean_output
     assert "--yolo" in clean_output
     assert "--output" in clean_output
-    assert "--visual" in clean_output
 
 
 def test_python_m_minisweagent_help():
@@ -550,12 +451,12 @@ def test_exit_immediately_flag_sets_confirm_exit_false():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "environment": {}, "model": {}}
 
         # Create mock agent with config
         mock_agent = Mock()
         mock_agent.config.confirm_exit = False
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function with --exit-immediately flag
@@ -565,7 +466,6 @@ def test_exit_immediately_flag_sets_confirm_exit_false():
             task="Test task",
             yolo=False,
             output=None,
-            visual=False,
             exit_immediately=True,  # This should set confirm_exit=False
             model_class=None,
         )
@@ -592,12 +492,12 @@ def test_no_exit_immediately_flag_sets_confirm_exit_true():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "environment": {}, "model": {}}
 
         # Create mock agent with config
         mock_agent = Mock()
         mock_agent.config.confirm_exit = True
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         mock_interactive_agent_class.return_value = mock_agent
 
         # Call main function without --exit-immediately flag (defaults to False)
@@ -607,7 +507,6 @@ def test_no_exit_immediately_flag_sets_confirm_exit_true():
             task="Test task",
             yolo=False,
             output=None,
-            visual=False,
             model_class=None,
         )
 
@@ -636,14 +535,14 @@ def test_exit_immediately_flag_with_typer_runner():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "environment": {}, "model": {}}
 
         # Setup mock agent instance
         mock_agent = Mock()
-        mock_agent.run.return_value = ("Success", "Result")
+        mock_agent.run.return_value = {"exit_status": "Success", "submission": "Result"}
         # Mock the attributes needed for save_traj
-        mock_agent.model.cost = 0.0
-        mock_agent.model.n_calls = 0
+        mock_agent.cost = 0.0
+        mock_agent.n_calls = 0
         mock_agent.messages = []
         mock_interactive_agent_class.return_value = mock_agent
 

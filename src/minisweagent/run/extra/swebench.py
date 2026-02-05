@@ -61,7 +61,7 @@ class ProgressTrackingAgent(DefaultAgent):
     def step(self) -> dict:
         """Override step to provide progress updates."""
         self.progress_manager.update_instance_status(
-            self.instance_id, f"Step {self.model.n_calls + 1:3d} (${self.model.cost:.2f})"
+            self.instance_id, f"Step {self.n_calls + 1:3d} (${self.cost:.2f})"
         )
         return super().step()
 
@@ -149,7 +149,10 @@ def process_instance(
             instance_id=instance_id,
             **config.get("agent", {}),
         )
-        exit_status, result = agent.run(task)
+        exit_info = agent.run(task)
+        exit_status = exit_info.get("exit_status")
+        result = exit_info.get("submission")
+        extra_info = {k: v for k, v in exit_info.items() if k not in {"exit_status", "submission"}}
     except Exception as e:
         logger.error(f"Error processing instance {instance_id}: {e}", exc_info=True)
         exit_status, result = type(e).__name__, str(e)
@@ -199,7 +202,7 @@ def main(
     output: str = typer.Option("", "-o", "--output", help="Output directory", rich_help_panel="Basic"),
     workers: int = typer.Option(1, "-w", "--workers", help="Number of worker threads for parallel processing", rich_help_panel="Basic"),
     model: str | None = typer.Option(None, "-m", "--model", help="Model to use", rich_help_panel="Basic"),
-    model_class: str | None = typer.Option(None, "-c", "--model-class", help="Model class to use (e.g., 'anthropic' or 'minisweagent.models.anthropic.AnthropicModel')", rich_help_panel="Advanced"),
+    model_class: str | None = typer.Option(None, "-c", "--model-class", help="Model class to use (e.g., 'litellm_textbased' or 'minisweagent.models.litellm_textbased_model.LitellmTextBasedModel')", rich_help_panel="Advanced"),
     redo_existing: bool = typer.Option(False, "--redo-existing", help="Redo existing instances", rich_help_panel="Data selection"),
     config_spec: Path = typer.Option( builtin_config_dir / "extra" / "swebench.yaml", "-c", "--config", help="Path to a config file", rich_help_panel="Basic"),
     environment_class: str | None = typer.Option( None, "--environment-class", help="Environment type to use. Recommended are docker or singularity", rich_help_panel="Advanced"),

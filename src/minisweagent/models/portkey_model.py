@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Any, Literal
 
@@ -14,6 +15,9 @@ from tenacity import (
     wait_exponential,
 )
 
+from minisweagent.exceptions import FormatError
+from minisweagent.models.utils.openai_multimodal import expand_multimodal_content
+from minisweagent.models.utils.textbased import format_text_observation_messages, parse_text_actions
 from minisweagent.models import GLOBAL_MODEL_STATS
 from minisweagent.models.utils.cache_control import set_cache_control
 
@@ -43,6 +47,12 @@ class PortkeyModelConfig(BaseModel):
     """Set explicit cache control markers, for example for Anthropic models"""
     cost_tracking: Literal["default", "ignore_errors"] = os.getenv("MSWEA_COST_TRACKING", "default")
     """Cost tracking mode for this model. Can be "default" or "ignore_errors" (ignore errors/missing cost info)"""
+    format_error_template: str = (
+        "Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions."
+    )
+    observation_template: str = "{{ output.output }}"
+    action_regex: str = r"```mswea_bash_command\\s*\\n(.*?)\\n```"
+    multimodal_regex: str | None = None
 
 
 class PortkeyModel:
@@ -53,7 +63,6 @@ class PortkeyModel:
         if self.config.litellm_model_registry and Path(self.config.litellm_model_registry).is_file():
             litellm.utils.register_model(json.loads(Path(self.config.litellm_model_registry).read_text()))
 
-        # Get API key from environment or raise error
         self._api_key = os.getenv("PORTKEY_API_KEY")
         if not self._api_key:
             raise ValueError(
@@ -62,15 +71,16 @@ class PortkeyModel:
                 "`mini-extra config set PORTKEY_API_KEY YOUR_KEY`."
             )
 
-        # Get virtual key from environment
         virtual_key = os.getenv("PORTKEY_VIRTUAL_KEY")
-
-        # Initialize Portkey client
         client_kwargs = {"api_key": self._api_key}
         if virtual_key:
             client_kwargs["virtual_key"] = virtual_key
 
         self.client = Portkey(**client_kwargs)
+
+    def _prepare_messages_for_api(self, messages: list[dict]) -> list[dict]:
+        allowed_keys = {"role", "content", "tool_calls", "tool_call_id", "name"}
+        return [{k: v for k, v in msg.items() if k in allowed_keys} for msg in messages]
 
     @retry(
         reraise=True,
@@ -80,33 +90,60 @@ class PortkeyModel:
         retry=retry_if_not_exception_type((KeyboardInterrupt, TypeError, ValueError)),
     )
     def _query(self, messages: list[dict[str, str]], **kwargs):
-        # return self.client.with_options(metadata={"request_id": request_id}).chat.completions.create(
         return self.client.chat.completions.create(
             model=self.config.model_name,
             messages=messages,
             **(self.config.model_kwargs | kwargs),
         )
 
-    def query(self, messages: list[dict[str, str]], **kwargs) -> dict:
+    def query(self, messages: list[dict], tools: list[dict] | None = None, **kwargs) -> dict:
+        prepared = self._prepare_messages_for_api(messages)
         if self.config.set_cache_control:
-            messages = set_cache_control(messages, mode=self.config.set_cache_control)
-        response = self._query([{"role": msg["role"], "content": msg["content"]} for msg in messages], **kwargs)
-        cost = self._calculate_cost(response)
-        self.n_calls += 1
-        self.cost += cost
-        GLOBAL_MODEL_STATS.add(cost)
-        return {
-            "content": response.choices[0].message.content or "",
-            "extra": {
-                "response": response.model_dump(),
-                "cost": cost,
-            },
+            prepared = set_cache_control(prepared, mode=self.config.set_cache_control)
+        response = self._query(prepared, **kwargs)
+        content = response.choices[0].message.content or ""
+        cost_info = self._calculate_cost(response)
+        cost = cost_info.get("cost", 0.0) or 0.0
+        actions = []
+        if tools is not None:
+            try:
+                actions = parse_text_actions(
+                    {"content": content},
+                    action_regex=self.config.action_regex,
+                    format_error_template=self.config.format_error_template,
+                    template_vars=self.config.model_dump(),
+                )
+            except FormatError as e:
+                extra = {"response": response.model_dump(), "timestamp": time.time()}
+                extra.update(cost_info)
+                self._record_cost(cost)
+                raise FormatError(str(e), extra=extra) from e
+        extra = {
+            "response": response.model_dump(),
+            "actions": actions,
+            "timestamp": time.time(),
         }
+        extra.update(cost_info)
+        self._record_cost(cost)
+        return {"content": content, "extra": extra}
+
+    def format_message(self, role: str, content: str, **kwargs) -> dict:
+        return {"role": role, "content": expand_multimodal_content(content, self.config.multimodal_regex), **kwargs}
+
+    def format_observation_messages(self, observation: list[dict], *, message: dict | None = None) -> list[dict]:
+        return format_text_observation_messages(
+            observation,
+            observation_template=self.config.observation_template,
+            template_vars=self.config.model_dump(),
+        )
 
     def get_template_vars(self) -> dict[str, Any]:
         return self.config.model_dump() | {"n_model_calls": self.n_calls, "model_cost": self.cost}
 
-    def _calculate_cost(self, response) -> float:
+    def serialize(self) -> dict[str, Any]:
+        return self.config.model_dump()
+
+    def _calculate_cost(self, response) -> dict:
         response_for_cost_calc = response.model_copy()
         if self.config.litellm_model_name_override:
             if response_for_cost_calc.model:
@@ -125,7 +162,6 @@ class PortkeyModel:
             )
             completion_tokens = 0
         if total_tokens - prompt_tokens - completion_tokens != 0:
-            # This is most likely related to how portkey treats cached tokens: It doesn't count them towards the prompt tokens (?)
             logger.warning(
                 f"WARNING: Total tokens - prompt tokens - completion tokens != 0: {response_for_cost_calc.model_dump()}."
                 " This is probably a portkey bug or incompatibility with litellm cost tracking. "
@@ -151,4 +187,9 @@ class PortkeyModel:
                 )
                 logger.critical(msg)
                 raise RuntimeError(msg) from e
-        return cost
+        return {"cost": cost}
+
+    def _record_cost(self, cost: float) -> None:
+        self.n_calls += 1
+        self.cost += cost
+        GLOBAL_MODEL_STATS.add(cost)

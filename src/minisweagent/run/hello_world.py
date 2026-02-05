@@ -7,7 +7,7 @@ import yaml
 from minisweagent import package_dir
 from minisweagent.agents.default import DefaultAgent
 from minisweagent.environments.local import LocalEnvironment
-from minisweagent.models.litellm_model import LitellmModel
+from minisweagent.models import get_model
 
 app = typer.Typer()
 
@@ -23,11 +23,10 @@ def main(
         prompt="What model do you want to use?",
     ),
 ) -> DefaultAgent:
-    agent = DefaultAgent(
-        LitellmModel(model_name=model_name),
-        LocalEnvironment(),
-        **yaml.safe_load(Path(package_dir / "config" / "default.yaml").read_text())["agent"],
-    )
+    config = yaml.safe_load(Path(package_dir / "config" / "default.yaml").read_text())
+    model = get_model(model_name, config.get("model", {}))
+    env = LocalEnvironment(**config.get("environment", {}))
+    agent = DefaultAgent(model, env, **config.get("agent", {}))
     agent.run(task)
     return agent
 

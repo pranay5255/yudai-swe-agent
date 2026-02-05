@@ -52,9 +52,6 @@ def get_model(input_model_name: str | None = None, config: dict | None = None) -
 
     model_class = get_model_class(resolved_model_name, config.pop("model_class", ""))
 
-    if (from_env := os.getenv("MSWEA_MODEL_API_KEY")) and not str(type(model_class)).endswith("DeterministicModel"):
-        config.setdefault("model_kwargs", {})["api_key"] = from_env
-
     if (
         any(s in resolved_model_name.lower() for s in ["anthropic", "sonnet", "opus", "claude"])
         and "set_cache_control" not in config
@@ -79,14 +76,18 @@ def get_model_name(input_model_name: str | None = None, config: dict | None = No
 
 
 _MODEL_CLASS_MAPPING = {
-    "anthropic": "minisweagent.models.anthropic.AnthropicModel",
     "litellm": "minisweagent.models.litellm_model.LitellmModel",
-    "litellm_response": "minisweagent.models.litellm_response_api_model.LitellmResponseAPIModel",
+    "litellm_textbased": "minisweagent.models.litellm_textbased_model.LitellmTextBasedModel",
+    "litellm_response": "minisweagent.models.litellm_response.LitellmResponseModel",
     "openrouter": "minisweagent.models.openrouter_model.OpenRouterModel",
+    "openrouter_textbased": "minisweagent.models.openrouter_model.OpenRouterTextBasedModel",
+    "openrouter_response": "minisweagent.models.openrouter_model.OpenRouterResponseModel",
     "portkey": "minisweagent.models.portkey_model.PortkeyModel",
-    "portkey_response": "minisweagent.models.portkey_response_api_model.PortkeyResponseAPIModel",
+    "portkey_response": "minisweagent.models.portkey_response.PortkeyResponseModel",
     "requesty": "minisweagent.models.requesty_model.RequestyModel",
     "deterministic": "minisweagent.models.test_models.DeterministicModel",
+    # Legacy/backwards compatibility
+    "anthropic": "minisweagent.models.anthropic.AnthropicModel",
 }
 
 
@@ -108,7 +109,7 @@ def get_model_class(model_name: str, model_class: str = "") -> type:
             msg = f"Unknown model class: {model_class} (resolved to {full_path}, available: {_MODEL_CLASS_MAPPING})"
             raise ValueError(msg)
 
-    # Default to LitellmModel
+    # Default to LitellmModel (tool calling)
     from minisweagent.models.litellm_model import LitellmModel
 
     return LitellmModel

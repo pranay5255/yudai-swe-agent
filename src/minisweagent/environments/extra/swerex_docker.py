@@ -5,6 +5,9 @@ from pydantic import BaseModel
 from swerex.deployment.docker import DockerDeployment
 from swerex.runtime.abstract import Command as RexCommand
 
+from minisweagent.models.utils.actions_toolcall import BASH_TOOL
+from minisweagent.utils.actions import get_action_command
+
 
 class SwerexDockerEnvironmentConfig(BaseModel):
     image: str
@@ -23,8 +26,9 @@ class SwerexDockerEnvironment:
         self.deployment = DockerDeployment(image=self.config.image, **self.config.deployment_extra_kwargs)
         asyncio.run(self.deployment.start())
 
-    def execute(self, command: str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
+    def execute(self, action: dict | str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
         """Execute a command in the environment and return the raw output."""
+        command = get_action_command(action)
         output = asyncio.run(
             self.deployment.runtime.execute(
                 RexCommand(
@@ -37,10 +41,13 @@ class SwerexDockerEnvironment:
                 )
             )
         )
-        return {
-            "output": output.stdout,
-            "returncode": output.exit_code,
-        }
+        return {"output": output.stdout, "returncode": output.exit_code, "command": command}
 
     def get_template_vars(self) -> dict[str, Any]:
+        return self.config.model_dump()
+
+    def get_tools(self) -> list[dict]:
+        return [BASH_TOOL]
+
+    def serialize(self) -> dict[str, Any]:
         return self.config.model_dump()

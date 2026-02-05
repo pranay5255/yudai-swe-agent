@@ -10,19 +10,20 @@ from tenacity import (
     wait_exponential,
 )
 
-from minisweagent.models import GLOBAL_MODEL_STATS
-from minisweagent.models.litellm_model import LitellmModel, LitellmModelConfig
+from minisweagent.exceptions import FormatError
+from minisweagent.models.litellm_textbased_model import LitellmTextBasedModel, LitellmTextBasedModelConfig
 from minisweagent.models.utils.openai_utils import coerce_responses_text
+from minisweagent.models.utils.retry import abort_exceptions
 
 logger = logging.getLogger("litellm_response_api_model")
 
 
-class LitellmResponseAPIModelConfig(LitellmModelConfig):
+class LitellmResponseModelConfig(LitellmTextBasedModelConfig):
     pass
 
 
-class LitellmResponseAPIModel(LitellmModel):
-    def __init__(self, *, config_class: Callable = LitellmResponseAPIModelConfig, **kwargs):
+class LitellmResponseModel(LitellmTextBasedModel):
+    def __init__(self, *, config_class: Callable = LitellmResponseModelConfig, **kwargs):
         super().__init__(config_class=config_class, **kwargs)
         self._previous_response_id: str | None = None
 
@@ -31,21 +32,10 @@ class LitellmResponseAPIModel(LitellmModel):
         stop=stop_after_attempt(10),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         before_sleep=before_sleep_log(logger, logging.WARNING),
-        retry=retry_if_not_exception_type(
-            (
-                litellm.exceptions.UnsupportedParamsError,
-                litellm.exceptions.NotFoundError,
-                litellm.exceptions.PermissionDeniedError,
-                litellm.exceptions.ContextWindowExceededError,
-                litellm.exceptions.APIError,
-                litellm.exceptions.AuthenticationError,
-                KeyboardInterrupt,
-            )
-        ),
+        retry=retry_if_not_exception_type(abort_exceptions()),
     )
-    def _query(self, messages: list[dict[str, str]], **kwargs):
+    def _query(self, messages: list[dict], **kwargs):
         try:
-            # Remove 'timestamp' field added by agent - not supported by OpenAI responses API
             clean_messages = [{"role": msg["role"], "content": msg["content"]} for msg in messages]
             resp = litellm.responses(
                 model=self.config.model_name,
@@ -59,21 +49,38 @@ class LitellmResponseAPIModel(LitellmModel):
             e.message += " You can permanently set your API key with `mini-extra config set KEY VALUE`."
             raise e
 
-    def query(self, messages: list[dict[str, str]], **kwargs) -> dict:
-        response = self._query(messages, **kwargs)
-        text = coerce_responses_text(response)
-        try:
-            cost = litellm.cost_calculator.completion_cost(response, model=self.config.model_name)
-        except Exception as e:
-            logger.critical(
-                f"Error calculating cost for model {self.config.model_name}: {e}. "
-                "Please check the 'Updating the model registry' section in the documentation. "
-                "http://bit.ly/4p31bi4 Still stuck? Please open a github issue for help!"
-            )
-            raise
-        self.n_calls += 1
-        self.cost += cost
-        GLOBAL_MODEL_STATS.add(cost)
-        return {
-            "content": text,
+    def query(self, messages: list[dict], tools: list[dict] | None = None, **kwargs) -> dict:
+        response = self._query(self._prepare_messages_for_api(messages), **kwargs)
+        content = coerce_responses_text(response)
+        cost_info = self._calculate_cost(response)
+        cost = cost_info.get("cost", 0.0) or 0.0
+        actions = []
+        if tools is not None:
+            try:
+                actions = self._parse_actions_from_content(content)
+            except FormatError as e:
+                extra = {"response": response.model_dump()}
+                extra.update(cost_info)
+                self._record_cost(cost)
+                raise FormatError(str(e), extra=extra) from e
+        extra = {
+            "response": response.model_dump(),
+            "actions": actions,
         }
+        extra.update(cost_info)
+        self._record_cost(cost)
+        return {"content": content, "extra": extra}
+
+    def _parse_actions_from_content(self, content: str) -> list[dict]:
+        from minisweagent.models.utils.textbased import parse_text_actions
+
+        return parse_text_actions(
+            {"content": content},
+            action_regex=self.config.action_regex,
+            format_error_template=self.config.format_error_template,
+            template_vars=self.config.model_dump(),
+        )
+
+
+# Backwards compatibility
+LitellmResponseAPIModel = LitellmResponseModel

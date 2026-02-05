@@ -14,7 +14,7 @@ There are several ways to set your API keys:
 * **Recommended**: Run our setup script: `mini-extra config setup`. This should also run automatically the first time you run `mini`.
 * Use `mini-extra config set ANTHROPIC_API_KEY <your-api-key>` to put the key in the `mini` [config file](../advanced/global_configuration.md).
 * Export your key as an environment variable: `export ANTHROPIC_API_KEY=<your-api-key>` (this is not persistent if you restart your shell, unless you add it to your shell config, like `~/.bashrc` or `~/.zshrc`).
-* If you only use a single model, you can also set `MSWEA_MODEL_API_KEY` (as environment variable or in the config file). This takes precedence over all other keys.
+* Set provider-specific API keys as environment variables (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`).
 * If you run several agents in parallel, see our note about rotating anthropic keys [here](../advanced/global_configuration.md).
 
 ??? note "All the API key names"
@@ -313,4 +313,3 @@ On top, there's a few more exotic model classes that you can use:
 As with the last two, you can also specify any import path to your own custom model class (even if it is not yet part of the mini-SWE-agent package).
 
 --8<-- "docs/_footer.md"
-

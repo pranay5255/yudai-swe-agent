@@ -17,7 +17,6 @@ from rich.console import Console
 
 from minisweagent import global_config_dir
 from minisweagent.agents.interactive import InteractiveAgent
-from minisweagent.agents.interactive_textual import TextualAgent
 from minisweagent.config import builtin_config_dir, get_config_path
 from minisweagent.environments.local import LocalEnvironment
 from minisweagent.models import get_model
@@ -33,11 +32,6 @@ prompt_session = PromptSession(history=FileHistory(global_config_dir / "mini_tas
 _HELP_TEXT = """Run mini-SWE-agent in your local environment.
 
 [not dim]
-There are two different user interfaces:
-
-[bold green]mini[/bold green] Simple REPL-style interface
-[bold green]mini -v[/bold green] Pager-style interface (Textual)
-
 More information about the usage: [bold green]https://mini-swe-agent.com/latest/usage/mini/[/bold green]
 [/not dim]
 """
@@ -46,9 +40,8 @@ More information about the usage: [bold green]https://mini-swe-agent.com/latest/
 # fmt: off
 @app.command(help=_HELP_TEXT)
 def main(
-    visual: bool = typer.Option(False, "-v", "--visual", help="Toggle (pager-style) UI (Textual) depending on the MSWEA_VISUAL_MODE_DEFAULT environment setting",),
     model_name: str | None = typer.Option( None, "-m", "--model", help="Model to use",),
-    model_class: str | None = typer.Option(None, "--model-class", help="Model class to use (e.g., 'anthropic' or 'minisweagent.models.anthropic.AnthropicModel')", rich_help_panel="Advanced"),
+    model_class: str | None = typer.Option(None, "--model-class", help="Model class to use (e.g., 'litellm_textbased' or 'minisweagent.models.litellm_textbased_model.LitellmTextBasedModel')", rich_help_panel="Advanced"),
     task: str | None = typer.Option(None, "-t", "--task", help="Task/problem statement", show_default=False),
     yolo: bool = typer.Option(False, "-y", "--yolo", help="Run without confirmation"),
     cost_limit: float | None = typer.Option(None, "-l", "--cost-limit", help="Cost limit. Set to 0 to disable."),
@@ -84,17 +77,15 @@ def main(
     if model_class is not None:
         config.setdefault("model", {})["model_class"] = model_class
     model = get_model(model_name, config.get("model", {}))
-    env = LocalEnvironment(**config.get("env", {}))
+    env = LocalEnvironment(**config.get("environment", {}))
 
-    # Both visual flag and the MSWEA_VISUAL_MODE_DEFAULT flip the mode, so it's essentially a XOR
-    agent_class = InteractiveAgent
-    if visual == (os.getenv("MSWEA_VISUAL_MODE_DEFAULT", "false") == "false"):
-        agent_class = TextualAgent
-
-    agent = agent_class(model, env, **config.get("agent", {}))
+    agent = InteractiveAgent(model, env, **config.get("agent", {}))
     exit_status, result, extra_info = None, None, None
     try:
-        exit_status, result = agent.run(task)  # type: ignore[arg-type]
+        exit_info = agent.run(task)  # type: ignore[arg-type]
+        exit_status = exit_info.get("exit_status")
+        result = exit_info.get("submission")
+        extra_info = {k: v for k, v in exit_info.items() if k not in {"exit_status", "submission"}}
     except Exception as e:
         logger.error(f"Error running agent: {e}", exc_info=True)
         exit_status, result = type(e).__name__, str(e)

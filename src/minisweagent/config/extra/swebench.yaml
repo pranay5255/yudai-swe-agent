@@ -1,18 +1,9 @@
 agent:
   system_template: |
     You are a helpful assistant that can interact multiple times with a computer shell to solve programming tasks.
-    Your response must contain exactly ONE bash code block with ONE command (or commands connected with && or ||).
-
-    Include a THOUGHT section before your command where you explain your reasoning process.
-    Format your response as shown in <format_example>.
-
-    <format_example>
-    THOUGHT: Your reasoning and analysis here
-
-    ```bash
-    your_command_here
-    ```
-    </format_example>
+    Use the `bash` tool to run commands. For each step:
+    - Include a THOUGHT section with a brief reasoning summary.
+    - Call the `bash` tool exactly once with a single command (or commands connected with && or ||).
 
     Failure to follow these rules will cause your response to be rejected.
   instance_template: |
@@ -33,7 +24,7 @@ agent:
 
     For each response:
     1. Include a THOUGHT section explaining your reasoning and what you're trying to accomplish
-    2. Provide exactly ONE bash command to execute
+    2. Call the `bash` tool exactly once to execute a single command (or commands connected with && or ||)
 
     ## Important Boundaries
     - MODIFY: Regular source code files in /testbed (this is the working directory for all your subsequent commands)
@@ -55,7 +46,7 @@ agent:
 
     Each response should include:
     1. A **THOUGHT** section where you explain your reasoning and plan
-    2. A single bash code block with your command
+    2. A single `bash` tool call with your command
 
     Format your responses like this:
 
@@ -63,23 +54,14 @@ agent:
     THOUGHT: Here I explain my reasoning process, analysis of the current situation,
     and what I'm trying to accomplish with the command below.
 
-    ```bash
-    your_command_here
-    ```
+    Call the `bash` tool with command: ls -la
     </format_example>
-
-    Commands must be specified in a single bash code block:
-
-    ```bash
-    your_command_here
-    ```
 
     **CRITICAL REQUIREMENTS:**
     - Your response SHOULD include a THOUGHT section explaining your reasoning
-    - Your response MUST include EXACTLY ONE bash code block
-    - This bash block MUST contain EXACTLY ONE command (or a set of commands connected with && or ||)
-    - If you include zero or multiple bash blocks, or no command at all, YOUR RESPONSE WILL FAIL
-    - Do NOT try to run multiple independent commands in separate blocks in one response
+    - Your response MUST include EXACTLY ONE tool call to `bash`
+    - The tool call MUST contain EXACTLY ONE command (or a set of commands connected with && or ||)
+    - Do NOT try to run multiple independent commands in separate tool calls in one response
     - Directory or environment variable changes are not persistent. Every action is executed in a new subshell.
     - However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir && ...` or write/load environment variables from files
 
@@ -87,28 +69,11 @@ agent:
     <example_response>
     THOUGHT: I need to understand the structure of the repository first. Let me check what files are in the current directory to get a better understanding of the codebase.
 
-    ```bash
-    ls -la
-    ```
-    </example_response>
-
-    Example of an INCORRECT response:
-    <example_response>
-    THOUGHT: I need to examine the codebase and then look at a specific file. I'll run multiple commands to do this.
-
-    ```bash
-    ls -la
-    ```
-
-    Now I'll read the file:
-
-    ```bash
-    cat file.txt
-    ```
+    Call the `bash` tool with command: ls -la
     </example_response>
 
     If you need to run multiple commands, either:
-    1. Combine them in one block using && or ||
+    1. Combine them in one command using && or ||
     ```bash
     command1 && command2 || echo "Error occurred"
     ```
@@ -160,7 +125,7 @@ agent:
 
     ## Submission
     When you've completed your work (reading, editing, testing), and cannot make further progress
-    issue exactly the following command:
+    call the `bash` tool with the following command:
 
     ```bash
     echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && git add -A && git diff --cached
@@ -169,7 +134,22 @@ agent:
     This command will submit your work.
     You cannot continue working (reading, editing, testing) in any way on this task after submitting.
     </instructions>
-  action_observation_template: |
+  step_limit: 250
+  cost_limit: 3.
+
+environment:
+  cwd: "/testbed"
+  timeout: 60
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: -R
+    PIP_PROGRESS_BAR: 'off'
+    TQDM_DISABLE: '1'
+  environment_class: docker
+
+model:
+  observation_template: |
     <returncode>{{output.returncode}}</returncode>
     {% if output.output | length < 10000 -%}
     <output>
@@ -195,53 +175,10 @@ agent:
     </output_tail>
     {%- endif -%}
   format_error_template: |
-    Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions.
-
-    Please format your action in triple backticks as shown in <response_example>.
-
-    <response_example>
-    Here are some thoughts about why you want to perform the action.
-
-    ```bash
-    <action>
-    ```
-    </response_example>
-
+    {{error}}
+    Please call the `bash` tool exactly once with a single command (or commands connected with && or ||).
     If you have completed your assignment, please consult the first message about how to
     submit your solution (you will not be able to continue working on this task after that).
-  timeout_template: |
-    The last command <command>{{action['action']}}</command> timed out and has been killed.
-    The output of the command was:
-    {% if output | length < 10000 -%}
-    <output>
-    {{output}}
-    </output>
-    {%- else -%}
-    <warning>Output was too long and has been truncated.</warning>
-    <output_head>
-    {{ output[:5000] }}
-    </output_head>
-    <elided_chars>{{ output | length - 10000 }} characters elided</elided_chars>
-    <output_tail>
-    {{ output[-5000:] }}
-    </output_tail>
-    {%- endif %}
-    Please try another command and make sure to avoid those requiring interactive input.
-  step_limit: 250
-  cost_limit: 3.
-
-environment:
-  cwd: "/testbed"
-  timeout: 60
-  env:
-    PAGER: cat
-    MANPAGER: cat
-    LESS: -R
-    PIP_PROGRESS_BAR: 'off'
-    TQDM_DISABLE: '1'
-  environment_class: docker
-
-model:
   model_name: "anthropic/claude-sonnet-4-5-20250929"
   model_kwargs:
     drop_params: true

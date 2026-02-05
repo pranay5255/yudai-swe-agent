@@ -244,8 +244,11 @@ class ParsedFoundryEnvironment(FoundryEnvironment):
         super().__init__(*args, **kwargs)
         self._parser = parser or BlockchainCommandParser()
 
-    def execute(self, command: str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
-        result = super().execute(command, cwd=cwd, timeout=timeout)
+    def execute(self, action: dict | str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
+        from minisweagent.utils.actions import get_action_command
+
+        command = get_action_command(action)
+        result = super().execute(action, cwd=cwd, timeout=timeout)
         parsed = self._parser.parse(command, result)
         if not parsed:
             return result

@@ -8,6 +8,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from minisweagent.models.utils.actions_toolcall import BASH_TOOL
+from minisweagent.utils.actions import get_action_command
+
 
 class DockerEnvironmentConfig(BaseModel):
     image: str
@@ -83,8 +86,9 @@ class DockerEnvironment:
         self.logger.info(f"Started container {container_name} with ID {result.stdout.strip()}")
         self.container_id = result.stdout.strip()
 
-    def execute(self, command: str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
+    def execute(self, action: dict | str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
         """Execute a command in the Docker container and return the result as a dict."""
+        command = get_action_command(action)
         cwd = cwd or self.config.cwd
         assert self.container_id, "Container not started"
 
@@ -96,16 +100,20 @@ class DockerEnvironment:
             cmd.extend(["-e", f"{key}={value}"])
         cmd.extend([self.container_id, "bash", "-lc", command])
 
-        result = subprocess.run(
-            cmd,
-            text=True,
-            timeout=timeout or self.config.timeout,
-            encoding="utf-8",
-            errors="replace",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        return {"output": result.stdout, "returncode": result.returncode}
+        try:
+            result = subprocess.run(
+                cmd,
+                text=True,
+                timeout=timeout or self.config.timeout,
+                encoding="utf-8",
+                errors="replace",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            return {"output": result.stdout, "returncode": result.returncode, "command": command}
+        except subprocess.TimeoutExpired as e:
+            output = e.output.decode("utf-8", errors="replace") if isinstance(e.output, bytes) else (e.output or "")
+            return {"output": output, "returncode": 124, "command": command, "timed_out": True}
 
     def cleanup(self):
         """Stop and remove the Docker container."""
@@ -116,3 +124,9 @@ class DockerEnvironment:
     def __del__(self):
         """Cleanup container when object is destroyed."""
         self.cleanup()
+
+    def get_tools(self) -> list[dict]:
+        return [BASH_TOOL]
+
+    def serialize(self) -> dict[str, Any]:
+        return self.config.model_dump()

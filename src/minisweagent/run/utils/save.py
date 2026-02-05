@@ -36,33 +36,31 @@ def save_traj(
     """
     if path is None:
         return
-    data = {
-        "info": {
-            "exit_status": exit_status,
-            "submission": result,
-            "model_stats": {
-                "instance_cost": 0.0,
-                "api_calls": 0,
-            },
-            "mini_version": __version__,
-        },
-        "messages": [],
-        "trajectory_format": "mini-swe-agent-1",
-    } | kwargs
-    if agent is not None:
-        data["info"]["model_stats"]["instance_cost"] = agent.model.cost
-        data["info"]["model_stats"]["api_calls"] = agent.model.n_calls
-        data["messages"] = agent.messages
-        data["info"]["config"] = {
-            "agent": agent.config.model_dump(),
-            "model": agent.model.config.model_dump(),
-            "environment": agent.env.config.model_dump(),
-            "agent_type": _get_class_name_with_module(agent),
-            "model_type": _get_class_name_with_module(agent.model),
-            "environment_type": _get_class_name_with_module(agent.env),
-        }
+    exit_info = {
+        "exit_status": exit_status,
+        "submission": result,
+    }
     if extra_info:
-        data["info"].update(extra_info)
+        exit_info.update(extra_info)
+
+    if agent is not None:
+        data = agent.save(exit_info=exit_info, **kwargs)
+    else:
+        data = {
+            "info": {
+                "exit_status": exit_status,
+                "submission": result,
+                "model_stats": {
+                    "cost": 0.0,
+                    "api_calls": 0,
+                },
+                "mini_version": __version__,
+            },
+            "messages": [],
+            "trajectory_format": "mini-swe-agent-2",
+        } | kwargs
+        if extra_info:
+            data["info"].update(extra_info)
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2))
