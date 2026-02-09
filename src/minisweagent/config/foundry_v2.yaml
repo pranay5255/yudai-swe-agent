@@ -1,0 +1,580 @@
+# =============================================================================
+# FOUNDRY SMART CONTRACT DEVELOPMENT AGENT CONFIGURATION
+# =============================================================================
+# This config is optimized for Solidity development using the Foundry toolkit.
+# Use with: mini -c foundry -t "your task"
+# =============================================================================
+
+agent:
+  # ---------------------------------------------------------------------------
+  # SYSTEM TEMPLATE
+  # ---------------------------------------------------------------------------
+  # The core identity and capabilities of the agent. This is sent once at the
+  # start of the conversation.
+  #
+  # RECOMMENDATION: Keep this focused on Foundry-specific tools and Solidity
+  # best practices. The agent should understand it's working with smart contracts
+  # where security and gas efficiency matter.
+  # ---------------------------------------------------------------------------
+  system_template: |
+    You are an expert Solidity smart contract developer specializing in the Foundry development toolkit.
+    You write secure, gas-efficient smart contracts and thoroughly test them before deployment.
+
+    ## Your Capabilities
+
+    You can execute bash commands to interact with the Foundry toolkit and the blockchain.
+    Your response must contain exactly ONE bash code block with the command(s) to execute.
+
+    ## Foundry Toolkit Reference (V2)
+
+    ### Compilation & Building
+    - `forge build` - Compile all contracts
+    - `forge build --sizes` - Show contract sizes (important for deployment limits)
+    - `forge build --via-ir` - Use IR-based compilation (better optimization)
+
+    ### Testing
+    - `forge test` - Run all tests
+    - `forge test -vv` - Verbose output (show logs)
+    - `forge test -vvv` - More verbose (show traces for failing tests)
+    - `forge test -vvvv` - Maximum verbosity (show all traces)
+    - `forge test --match-test <pattern>` - Run specific test
+    - `forge test --match-contract <pattern>` - Run tests in specific contract
+    - `forge test --gas-report` - Show gas usage per function
+    - `forge coverage` - Generate test coverage report
+
+    ### Blockchain Interaction (cast)
+    - `cast call <addr> "<sig>(args)" --rpc-url $ETH_RPC_URL` - Read state (free)
+    - `cast send <addr> "<sig>(args)" --rpc-url $ETH_RPC_URL --private-key $PRIVATE_KEY` - Write state
+    - `cast balance <addr> --rpc-url $ETH_RPC_URL` - Check ETH balance
+    - `cast storage <addr> <slot> --rpc-url $ETH_RPC_URL` - Read raw storage slot
+    - `cast abi-encode "<sig>" <args>` - Encode function call data
+    - `cast abi-decode "<sig>" <data>` - Decode return data
+    - `cast 4byte <selector>` - Look up function signature
+    - `cast chain-id --rpc-url $ETH_RPC_URL` - Get chain ID
+    - `cast block-number --rpc-url $ETH_RPC_URL` - Get current block
+    - `cast rpc eth_getBlockByNumber 0x<hex> false --rpc-url $ETH_RPC_URL` - Fetch a specific block (archive check)
+
+    ### Deployment & Scripts
+    - `forge script script/Deploy.s.sol --rpc-url $ETH_RPC_URL` - Simulate deployment
+    - `forge script script/Deploy.s.sol --rpc-url $ETH_RPC_URL --broadcast` - Execute deployment
+    - `forge script script/Deploy.s.sol --rpc-url $ETH_RPC_URL --broadcast --verify` - Deploy and verify
+    - `forge create <Contract> --rpc-url $ETH_RPC_URL --private-key $PRIVATE_KEY` - Simple deploy
+
+    ### Local Testing with Anvil
+    - `anvil` - Start local testnet (default: http://127.0.0.1:8545)
+    - `anvil --fork-url $ETH_RPC_URL` - Fork mainnet/testnet locally
+    - `anvil --fork-url $ETH_RPC_URL --fork-block-number <n>` - Fork at specific block
+    - `cast block-number --rpc-url http://127.0.0.1:8545` - Verify forked block
+
+    ### Debugging
+    - `chisel` - Interactive Solidity REPL
+    - `forge debug <test> --debug` - Step-through debugger
+    - `cast run <tx_hash> --rpc-url $ETH_RPC_URL` - Replay transaction locally
+
+    ### Verification
+    - `forge verify-contract <addr> <Contract> --chain <chain> --etherscan-api-key $ETHERSCAN_API_KEY`
+
+    ## Response Format
+
+    Always structure your response with reasoning followed by exactly ONE code block:
+
+    <format_example>
+    THOUGHT: Explain your reasoning and what you expect to happen.
+
+    ```bash
+    your_command_here
+    ```
+    </format_example>
+
+    ## Output Hygiene (V2)
+
+    - Avoid dumping entire files repeatedly. Prefer targeted reads:
+      - `rg -n "function|modifier" src/Target.sol`
+      - `sed -n '1,200p' src/Target.sol`
+    - Never paste Solidity source directly into the bash block.
+      - Always write Solidity via a heredoc to a file.
+
+    ## Chain-Specific Note (V2)
+
+    - Some chains (e.g., BSC) do not support EIP-1559.
+      - If you see EIP-1559 errors, rerun with `--legacy` on `forge script`.
+
+    ## Fork Reproducibility (V2)
+
+    - After starting anvil with a block number, verify it:
+      - `cast block-number --rpc-url http://127.0.0.1:8545`
+    - If the block does not match, you likely need an archive RPC.
+
+    ## Security Considerations
+
+    When writing contracts, always consider:
+    - Reentrancy attacks (use checks-effects-interactions pattern, ReentrancyGuard)
+    - Integer overflow/underflow (Solidity 0.8+ has built-in checks)
+    - Access control (use OpenZeppelin's Ownable, AccessControl)
+    - Front-running vulnerabilities
+    - Proper input validation
+    - Gas limits and DoS vectors
+
+    ## Failure Handling
+
+    If a command fails, analyze the error and try a different approach.
+    Common issues:
+    - Compilation errors: Check syntax, imports, Solidity version
+    - Test failures: Use -vvvv flag to see full stack traces
+    - RPC errors: Verify ETH_RPC_URL is set and accessible
+    - Gas estimation failed: The transaction would revert on-chain
+
+  # ---------------------------------------------------------------------------
+  # INSTANCE TEMPLATE
+  # ---------------------------------------------------------------------------
+  # Sent after the system template, contains the specific task and context.
+  # Jinja2 variables available: {{task}}, {{cwd}}, {{system}}, {{release}}, etc.
+  #
+  # RECOMMENDATION: Include project structure hints and emphasize the iterative
+  # workflow of write -> compile -> test -> check state.
+  # ---------------------------------------------------------------------------
+  instance_template: |
+    ## Your Task
+
+    {{task}}
+
+    ## Development Environment
+
+    - **Working Directory**: {{cwd}}
+    - **System**: {{system}} {{release}} {{machine}}
+    - **Foundry**: forge, cast, anvil, chisel are available
+
+    ## Recommended Workflow
+
+    Follow this iterative approach for smart contract development:
+
+    1. **Explore** - Understand the project structure
+       ```bash
+       ls -la && cat foundry.toml
+       ```
+
+    2. **Analyze** - Read existing contracts and understand requirements
+       ```bash
+       find src -name "*.sol" -exec echo "=== {} ===" \; -exec sed -n '1,200p' {} \;
+       ```
+
+    3. **Write** - Create or modify Solidity contracts using heredoc
+       ```bash
+       cat <<'EOF' > src/MyContract.sol
+       // SPDX-License-Identifier: MIT
+       pragma solidity ^0.8.19;
+       contract MyContract { ... }
+       EOF
+       ```
+
+    4. **Compile** - Check for errors
+       ```bash
+       forge build
+       ```
+
+    4b. **Verify Fork Block** (when using anvil)
+       ```bash
+       cast block-number --rpc-url http://127.0.0.1:8545
+       ```
+
+    5. **CHECK STATE** - After successful compilation, ALWAYS verify by:
+       - Running tests: `forge test -vvv`
+       - Inspecting the contract: `forge inspect <ContractName> abi`
+       - Reading on-chain state (if deployed): `cast call <addr> "<function>()" --rpc-url $ETH_RPC_URL`
+       - Checking storage slots: `cast storage <addr> <slot> --rpc-url $ETH_RPC_URL`
+
+       <important>
+       Always check state after deployment to verify the contract works as expected.
+       Use cast call to read contract state and confirm behavior before submitting.
+       </important>
+
+    6. **Deploy** (if needed) - Deploy to anvil/testnet
+       ```bash
+       forge script script/Deploy.s.sol --rpc-url $ETH_RPC_URL --broadcast
+       ```
+
+    7. **Verify Deployment** - Confirm the deployed contract state
+       ```bash
+       cast call <deployed_address> "someFunction()" --rpc-url $ETH_RPC_URL
+       ```
+
+    8. **Submit** - When verified working, finish with:
+       ```bash
+       echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+       ```
+       <important>Do not combine this with other commands. After this, you cannot continue.</important>
+
+    ## Important Rules
+
+    1. Every response must contain exactly ONE bash code block
+    2. Directory changes are NOT persistent (each command runs in a new subshell)
+       - Use `cd /path && command` to run in a specific directory
+    3. Environment variables are NOT persistent
+       - Use `export VAR=value && command` or source from files
+    4. For multi-line Solidity files, always use heredoc with 'EOF' (quoted to prevent expansion)
+       - Example:
+         ```bash
+         cat <<'EOF' > src/Strategy.sol
+         // SPDX-License-Identifier: MIT
+         pragma solidity ^0.8.19;
+         contract Strategy { function run() public {} }
+         EOF
+         ```
+
+    ## Project Structure (Standard Foundry)
+
+    ```
+    .
+    ├── foundry.toml      # Project configuration
+    ├── src/              # Contract source files
+    ├── test/             # Test files (*. t.sol)
+    ├── script/           # Deployment scripts (*.s.sol)
+    └── lib/              # Dependencies (installed via forge install)
+    ```
+
+    Now, begin by exploring the project to understand what exists.
+
+  # ---------------------------------------------------------------------------
+  # ACTION OBSERVATION TEMPLATE
+  # ---------------------------------------------------------------------------
+  # How command output is formatted and shown back to the agent.
+  #
+  # RECOMMENDATION: Include Foundry-specific error hints and keep output
+  # manageable (Solidity compilation can be verbose). 15000 chars is good
+  # for most forge outputs while avoiding token bloat.
+  # ---------------------------------------------------------------------------
+  action_observation_template: |
+    <returncode>{{output.returncode}}</returncode>
+    {%- if output.returncode != 0 %}
+    <error_analysis>
+    Common Foundry error patterns:
+    - "ParserError" / "TypeError": Solidity syntax or type error - check the line number
+    - "CompilerError": Usually missing imports or wrong pragma version
+    - "Arithmetic over/underflow": Use unchecked{} block if intentional
+    - "EvmError: Revert": Transaction reverted - check require/revert conditions
+    - "Setup failed": Test setUp() function has an error
+    - "contract creation code storage out of gas": Contract too large (>24KB)
+    - "RPC error" / "connection refused": Check ETH_RPC_URL or start anvil
+    </error_analysis>
+    {%- endif %}
+    {% if output.output | length < 15000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>
+    Output exceeded 15000 characters and was truncated.
+    For large outputs:
+    - Use `forge test --match-test <name>` to run specific tests
+    - Use `forge build 2>&1 | head -100` to limit output
+    - Redirect to file: `forge test > output.txt && tail -50 output.txt`
+    </warning>
+    {%- set elided_chars = output.output | length - 15000 -%}
+    <output_head>
+    {{ output.output[:7500] }}
+    </output_head>
+    <elided>{{ elided_chars }} characters omitted</elided>
+    <output_tail>
+    {{ output.output[-7500:] }}
+    </output_tail>
+    {%- endif %}
+
+  # ---------------------------------------------------------------------------
+  # FORMAT ERROR TEMPLATE
+  # ---------------------------------------------------------------------------
+  # Shown when the agent's response doesn't match the expected format
+  # (e.g., no code block, or multiple code blocks).
+  #
+  # RECOMMENDATION: Be explicit about the exact format needed. Foundry agents
+  # might try to write multiple commands or forget the bash block.
+  # ---------------------------------------------------------------------------
+  format_error_template: |
+    Your response must contain exactly ONE bash code block. Found {{actions|length}} code blocks.
+
+    Please format your response as:
+
+    ```
+    THOUGHT: Your reasoning here.
+
+    ```bash
+    single_command_here
+    ```
+    ```
+
+    If you need to run multiple commands, chain them:
+    ```bash
+    command1 && command2 && command3
+    ```
+
+    To finish and submit your work:
+    ```bash
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT
+    ```
+
+    Do NOT include multiple separate code blocks in one response.
+
+  # ---------------------------------------------------------------------------
+  # TIMEOUT TEMPLATE
+  # ---------------------------------------------------------------------------
+  # Shown when a command exceeds the timeout limit.
+  #
+  # RECOMMENDATION: Foundry compilation and tests can take time. Suggest
+  # alternatives for long-running operations.
+  # ---------------------------------------------------------------------------
+  timeout_template: |
+    Command timed out after {{timeout}} seconds and was terminated:
+    <command>{{action['action']}}</command>
+
+    {% if output | length < 10000 -%}
+    <partial_output>
+    {{output}}
+    </partial_output>
+    {%- else -%}
+    <partial_output_head>{{ output[:5000] }}</partial_output_head>
+    <elided>{{ output | length - 10000 }} characters omitted</elided>
+    <partial_output_tail>{{ output[-5000:] }}</partial_output_tail>
+    {%- endif %}
+
+    Suggestions for timeout issues:
+    - For `forge build`: Try `forge build --no-cache` or check for infinite loops
+    - For `forge test`: Use `--match-test <name>` to run fewer tests
+    - For RPC calls: Check network connectivity, try a different RPC endpoint
+    - For `anvil --fork-url`: Forking large state can be slow, try `--fork-block-number`
+    - Consider running long operations in background: `command &`
+
+  # ---------------------------------------------------------------------------
+  # ACTION REGEX
+  # ---------------------------------------------------------------------------
+  # Regex pattern to extract commands from the agent's response.
+  # The first capture group becomes the command to execute.
+  #
+  # RECOMMENDATION: Match ```bash or ```sh blocks. The 's' flag (DOTALL)
+  # is applied automatically to match across newlines.
+  # ---------------------------------------------------------------------------
+  action_regex: "```(?:bash|sh)\\s*\\n(.*?)\\n```"
+
+  # ---------------------------------------------------------------------------
+  # STEP LIMIT
+  # ---------------------------------------------------------------------------
+  # Maximum number of LLM calls before stopping. 0 = unlimited.
+  #
+  # RECOMMENDATION: 100 steps is generous for most contract development tasks.
+  # Complex multi-contract systems might need more. Set to 0 for interactive
+  # sessions where you control when to stop.
+  # ---------------------------------------------------------------------------
+  step_limit: 100
+
+  # ---------------------------------------------------------------------------
+  # COST LIMIT
+  # ---------------------------------------------------------------------------
+  # Maximum API cost in USD before stopping. 0 = unlimited.
+  #
+  # RECOMMENDATION: $5-10 is reasonable for contract development sessions.
+  # Claude Sonnet is ~$3/1M input tokens, $15/1M output tokens.
+  # A typical session might use 50-100k tokens total (~$0.50-2.00).
+  # Set higher for complex tasks with lots of iteration.
+  # ---------------------------------------------------------------------------
+  cost_limit: 5.0
+
+  # ---------------------------------------------------------------------------
+  # MODE (InteractiveAgent only)
+  # ---------------------------------------------------------------------------
+  # Controls human-in-the-loop confirmation:
+  # - "human": You type commands, agent only provides suggestions
+  # - "confirm": Agent proposes commands, you approve before execution
+  # - "yolo": Agent executes commands without confirmation
+  #
+  # RECOMMENDATION: "confirm" for safety - smart contract development involves
+  # real value and you want to review before deploying or sending transactions.
+  # Use "yolo" only for read-only exploration or local anvil testing.
+  # ---------------------------------------------------------------------------
+  mode: confirm
+
+  # ---------------------------------------------------------------------------
+  # WHITELIST ACTIONS (InteractiveAgent only)
+  # ---------------------------------------------------------------------------
+  # Regex patterns for commands that skip confirmation in "confirm" mode.
+  # Matching commands execute immediately without asking.
+  #
+  # RECOMMENDATION: Whitelist safe, read-only commands to speed up workflow.
+  # NEVER whitelist commands that send transactions or modify state on live networks.
+  # ---------------------------------------------------------------------------
+  whitelist_actions:
+    # Safe exploration commands
+    - "^ls"
+    - "^cat "
+    - "^head "
+    - "^tail "
+    - "^find "
+    - "^grep "
+    - "^tree"
+    - "^pwd$"
+    - "^echo "
+    - "^wc "
+    # Safe Foundry read operations
+    - "^forge build"
+    - "^forge test"
+    - "^forge coverage"
+    - "^forge fmt"
+    - "^forge doc"
+    - "^forge snapshot"
+    - "^forge inspect"
+    - "^cast chain-id"
+    - "^cast block-number"
+    - "^cast balance"
+    - "^cast call"           # Read-only blockchain call
+    - "^cast storage"
+    - "^cast abi-encode"
+    - "^cast abi-decode"
+    - "^cast 4byte"
+    - "^cast keccak"
+    - "^cast to-"
+    - "^cast from-"
+    # Note: cast send, forge script --broadcast, forge create are NOT whitelisted
+    # because they modify blockchain state and should always be confirmed
+
+  # ---------------------------------------------------------------------------
+  # CONFIRM EXIT (InteractiveAgent only)
+  # ---------------------------------------------------------------------------
+  # Whether to ask for confirmation when the agent wants to finish.
+  #
+  # RECOMMENDATION: true - allows you to give follow-up tasks without restarting.
+  # Set to false for batch/automated runs.
+  # ---------------------------------------------------------------------------
+  confirm_exit: true
+
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+# Settings for the FoundryEnvironment (Docker-based with Foundry + security tools)
+# =============================================================================
+
+environment:
+  # ---------------------------------------------------------------------------
+  # ENVIRONMENT CLASS
+  # ---------------------------------------------------------------------------
+  # Use FoundryEnvironment which provides a Docker container with:
+  # - Foundry tools: forge, cast, anvil, chisel
+  # - Security tools: slither, aderyn, mythril, echidna (available but not primary)
+  # ---------------------------------------------------------------------------
+  environment_class: foundry
+
+  # ---------------------------------------------------------------------------
+  # DOCKER IMAGE
+  # ---------------------------------------------------------------------------
+  # Unified image with Foundry + security analysis tools.
+  # Build with: docker build -t yudai/foundry-full:latest -f docker/Dockerfile.yudai .
+  # ---------------------------------------------------------------------------
+  image: "yudai/foundry-full:latest"
+
+  # ---------------------------------------------------------------------------
+  # PROJECT PATH
+  # ---------------------------------------------------------------------------
+  # Host path to your Foundry project. Will be mounted at /workspace in container.
+  # Set via CLI: mini -c foundry --project /path/to/project
+  # ---------------------------------------------------------------------------
+  project_path: ""
+
+  # ---------------------------------------------------------------------------
+  # TIMEOUT
+  # ---------------------------------------------------------------------------
+  # Default timeout in seconds for command execution.
+  #
+  # RECOMMENDATION: 120 seconds. Foundry operations can be slow:
+  # - forge build with optimizer: 30-60s for large projects
+  # - forge test with fuzzing: 60-120s
+  # - RPC calls to mainnet: 5-30s depending on node
+  # Increase for complex projects or slow networks.
+  # ---------------------------------------------------------------------------
+  timeout: 120
+
+  # ---------------------------------------------------------------------------
+  # ENVIRONMENT VARIABLES
+  # ---------------------------------------------------------------------------
+  # Variables set in the execution environment.
+  #
+  # RECOMMENDATION: Disable interactive prompts and progress bars that break
+  # non-interactive execution. Set Foundry-specific defaults.
+  # ---------------------------------------------------------------------------
+  env:
+    # Disable pagination (would hang waiting for input)
+    PAGER: cat
+    MANPAGER: cat
+    LESS: "-R"
+
+    # Disable progress indicators that clutter output
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"
+
+    # Foundry settings
+    FOUNDRY_PROFILE: "default"
+
+    # Force color output for better readability
+    FORCE_COLOR: "1"
+
+    # Disable interactive prompts
+    CI: "true"
+
+    # Suppress Foundry nightly warning
+    FOUNDRY_DISABLE_NIGHTLY_WARNING: "1"
+
+    # Note: These should be set by user or forwarded, not hardcoded:
+    # ETH_RPC_URL: "https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
+    # ETHERSCAN_API_KEY: "YOUR_KEY"
+    # PRIVATE_KEY: "0x..."  # NEVER commit this!
+
+
+# =============================================================================
+# MODEL CONFIGURATION
+# =============================================================================
+# Settings for the LLM model
+# =============================================================================
+
+model:
+  # ---------------------------------------------------------------------------
+  # MODEL KWARGS
+  # ---------------------------------------------------------------------------
+  # Additional arguments passed to the model API.
+  #
+  # RECOMMENDATION:
+  # - temperature: 0.0 for deterministic code generation (smart contracts need precision)
+  # - drop_params: true to ignore unsupported params across different models
+  # - max_tokens: 4096 is good for code generation (increase for very long contracts)
+  # ---------------------------------------------------------------------------
+  model_kwargs:
+    # Deterministic output - critical for code generation
+    # Smart contracts must be precise, not creative
+    temperature: 0.0
+
+    # Allow switching between model providers without param errors
+    drop_params: true
+
+    # Maximum response length
+    # 4096 tokens ≈ 3000 words ≈ 200 lines of code
+    # Increase if agent truncates long contract files
+    max_tokens: 4096
+
+  # ---------------------------------------------------------------------------
+  # MODEL NAME (set via CLI or environment)
+  # ---------------------------------------------------------------------------
+  # The model to use. Set via: mini -m <model> or MSWEA_MODEL_NAME env var
+  #
+  # RECOMMENDATIONS by use case:
+  #
+  # For complex contract architecture & security analysis:
+  #   claude-opus-4-5-20251101     - Best reasoning, highest cost (~$15/1M out)
+  #
+  # For general contract development (RECOMMENDED DEFAULT):
+  #   claude-sonnet-4-20250514     - Great balance of capability and cost (~$15/1M out)
+  #
+  # For simple tasks & iteration:
+  #   claude-3-5-haiku-20241022    - Fast and cheap (~$4/1M out)
+  #   gpt-4o-mini                  - Even cheaper alternative
+  #
+  # For code-specific tasks:
+  #   deepseek/deepseek-coder      - Specialized for code
+  #   codellama/CodeLlama-34b      - Open source option
+  #
+  # Uncomment to set a default (otherwise uses MSWEA_MODEL_NAME or prompts):
+  # model_name: "claude-sonnet-4-20250514"
