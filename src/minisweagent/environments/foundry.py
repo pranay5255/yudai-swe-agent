@@ -71,6 +71,9 @@ class FoundryEnvironmentConfig(BaseModel):
     anvil_port: int = 8545
     """Port for anvil to listen on."""
 
+    anvil_startup_timeout: int = 60
+    """Seconds to wait for Anvil RPC to become responsive."""
+
     # Security
     pull_timeout: int = 180
     """Timeout for pulling Docker image. Foundry image is ~1GB."""
@@ -158,15 +161,16 @@ class FoundryEnvironment(DockerEnvironment):
         self,
         fork_url: str = "",
         block_number: int | None = None,
-        startup_timeout: int = 60,
+        startup_timeout: int | None = None,
     ) -> dict[str, Any]:
         """Start anvil local testnet in background.
 
         Args:
             fork_url: RPC URL to fork from. Uses config value if not provided.
             block_number: Block number to fork at. Latest if not provided.
-            startup_timeout: Max seconds to wait for Anvil to be ready (default 60).
-                            Historical forks may need longer to initialize.
+            startup_timeout: Max seconds to wait for Anvil to be ready.
+                            Uses config value if not provided. Historical forks may
+                            need longer to initialize.
 
         Returns:
             Execute result dict with output and returncode
@@ -177,6 +181,11 @@ class FoundryEnvironment(DockerEnvironment):
         """
         fork_url = fork_url or self._foundry_config.anvil_fork_url
         port = self._foundry_config.anvil_port
+        timeout = (
+            self._foundry_config.anvil_startup_timeout
+            if startup_timeout is None
+            else startup_timeout
+        )
 
         cmd_parts = [f"anvil --port {port}"]
         if fork_url:
@@ -197,9 +206,7 @@ class FoundryEnvironment(DockerEnvironment):
         result = self.execute(background_cmd)
 
         # Wait for Anvil to be ready by testing RPC connectivity
-        anvil_status = self._wait_for_anvil_ready(
-            fork_url, block_number, timeout=startup_timeout
-        )
+        anvil_status = self._wait_for_anvil_ready(fork_url, block_number, timeout=timeout)
         if not anvil_status["running"]:
             error_msg = anvil_status.get("error", "Unknown error")
             self.logger.error(f"Anvil failed to start: {error_msg}")
