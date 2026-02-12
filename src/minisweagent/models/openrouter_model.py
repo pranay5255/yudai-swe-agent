@@ -114,6 +114,15 @@ class OpenRouterModel:
         self.cost += cost
         GLOBAL_MODEL_STATS.add(cost)
 
+        if "error" in response:
+            error = response["error"]
+            raise OpenRouterAPIError(
+                f"OpenRouter API error: {error.get('message', 'Unknown error')} (code: {error.get('code', 'unknown')})"
+            )
+
+        if "choices" not in response or not response["choices"]:
+            raise OpenRouterAPIError(f"Invalid OpenRouter API response: missing 'choices' field. Response: {response}")
+
         return {
             "content": response["choices"][0]["message"]["content"] or "",
             "extra": {
