@@ -1,4 +1,4 @@
-"""Foundry development environment for smart contract development and security analysis.
+"""Foundry development environment for smart contract development and security analysis (V2).
 
 This environment extends DockerEnvironment with Foundry-specific features:
 - Pre-configured with Foundry tools (forge, cast, anvil, chisel)
@@ -17,8 +17,8 @@ from pydantic import BaseModel, Field
 from minisweagent.environments.docker import DockerEnvironment
 
 
-class FoundryEnvironmentConfig(BaseModel):
-    """Configuration for Foundry development environment."""
+class FoundryEnvironmentConfigV2(BaseModel):
+    """Configuration for Foundry development environment (V2)."""
 
     # Docker image settings
     image: str = "yudai/foundry-full:latest"
@@ -74,13 +74,28 @@ class FoundryEnvironmentConfig(BaseModel):
     anvil_startup_timeout: int = 60
     """Seconds to wait for Anvil RPC to become responsive."""
 
+    anvil_extra_args: list[str] = Field(default_factory=list)
+    """Extra CLI args appended to the anvil command (e.g. ['--fork-retries', '5'])."""
+
+    verify_fork_block: bool = True
+    """Verify Anvil actually forked at the requested block."""
+
+    verify_fork_block_tolerance: int = 0
+    """Allowed block number drift after startup (0 = exact match)."""
+
+    verify_fork_attempts: int = 5
+    """Number of retries to verify the fork block."""
+
+    verify_fork_wait_sec: float = 2.0
+    """Seconds to wait between fork verification attempts."""
+
     # Security
     pull_timeout: int = 180
     """Timeout for pulling Docker image. Foundry image is ~1GB."""
 
 
-class FoundryEnvironment(DockerEnvironment):
-    """Docker environment specialized for Foundry smart contract development.
+class FoundryEnvironmentV2(DockerEnvironment):
+    """Docker environment specialized for Foundry smart contract development (V2).
 
     Extends DockerEnvironment with:
     - Volume mounting for host Foundry projects
@@ -89,7 +104,7 @@ class FoundryEnvironment(DockerEnvironment):
     - Foundry-specific template variables
 
     Example:
-        >>> env = FoundryEnvironment(project_path="/path/to/foundry/project")
+        >>> env = FoundryEnvironmentV2(project_path="/path/to/foundry/project")
         >>> result = env.execute("forge build")
         >>> print(result["output"])
     """
@@ -97,7 +112,7 @@ class FoundryEnvironment(DockerEnvironment):
     def __init__(
         self,
         *,
-        config_class: type = FoundryEnvironmentConfig,
+        config_class: type = FoundryEnvironmentConfigV2,
         logger: logging.Logger | None = None,
         **kwargs,
     ):
@@ -108,10 +123,11 @@ class FoundryEnvironment(DockerEnvironment):
             logger: Optional logger instance
             **kwargs: Config fields passed to config_class
         """
-        self.logger = logger or logging.getLogger("minisweagent.environment.foundry")
+        self.logger = logger or logging.getLogger("minisweagent.environment.foundry_v2")
 
         # Parse our config first to extract foundry-specific settings
         self._foundry_config = config_class(**kwargs)
+        self._last_fork_info: dict[str, Any] | None = None
 
         # Build Docker run_args with volume mount
         run_args = ["--rm"]
@@ -137,10 +153,10 @@ class FoundryEnvironment(DockerEnvironment):
             pull_timeout=self._foundry_config.pull_timeout,
         )
 
-        self.logger.info("Foundry environment initialized")
+        self.logger.info("Foundry environment initialized (V2)")
 
     def get_template_vars(self) -> dict[str, Any]:
-        """Return template variables including Foundry-specific ones.
+        """Return template variables including Foundry-specific ones (V2).
 
         Returns:
             Dict with config values plus Foundry-specific variables:
@@ -155,6 +171,8 @@ class FoundryEnvironment(DockerEnvironment):
             "project_path": self._foundry_config.project_path,
             "anvil_fork_url": self._foundry_config.anvil_fork_url,
             "anvil_port": self._foundry_config.anvil_port,
+            "anvil_verify_fork_block": self._foundry_config.verify_fork_block,
+            "anvil_verify_fork_tolerance": self._foundry_config.verify_fork_block_tolerance,
         }
 
     def start_anvil(
@@ -163,7 +181,7 @@ class FoundryEnvironment(DockerEnvironment):
         block_number: int | None = None,
         startup_timeout: int | None = None,
     ) -> dict[str, Any]:
-        """Start anvil local testnet in background.
+        """Start anvil local testnet in background (V2).
 
         Args:
             fork_url: RPC URL to fork from. Uses config value if not provided.
@@ -192,6 +210,8 @@ class FoundryEnvironment(DockerEnvironment):
             cmd_parts.append(f"--fork-url {fork_url}")
             if block_number:
                 cmd_parts.append(f"--fork-block-number {block_number}")
+        if self._foundry_config.anvil_extra_args:
+            cmd_parts.extend(self._normalize_anvil_args(self._foundry_config.anvil_extra_args))
 
         # Start in background with nohup
         anvil_cmd = " ".join(cmd_parts)
@@ -213,7 +233,87 @@ class FoundryEnvironment(DockerEnvironment):
             raise RuntimeError(error_msg)
 
         self.logger.info(f"Anvil successfully started on port {port}")
+
+        # Verify fork block to ensure reproducibility
+        actual_block = None
+        verified = False
+        if block_number is not None and self._foundry_config.verify_fork_block:
+            actual_block = self._verify_fork_block(block_number)
+            verified = actual_block is not None
+
+        self._last_fork_info = {
+            "fork_url": fork_url,
+            "requested_block": block_number,
+            "actual_block": actual_block,
+            "verified": verified,
+            "rpc_url": self.get_anvil_rpc_url(),
+        }
         return result
+
+    def get_last_fork_info(self) -> dict[str, Any] | None:
+        """Return metadata about the most recent Anvil fork."""
+        return dict(self._last_fork_info) if self._last_fork_info else None
+
+    def _normalize_anvil_args(self, args: list[str] | str) -> list[str]:
+        if isinstance(args, str):
+            return args.split()
+        return [str(arg) for arg in args]
+
+    def _verify_fork_block(self, expected_block: int) -> int | None:
+        """Verify anvil forked at the expected block; raise on mismatch."""
+        import time
+
+        rpc_url = self.get_anvil_rpc_url()
+        tolerance = max(0, int(self._foundry_config.verify_fork_block_tolerance))
+        attempts = max(1, int(self._foundry_config.verify_fork_attempts))
+        wait_sec = float(self._foundry_config.verify_fork_wait_sec)
+
+        for attempt in range(1, attempts + 1):
+            result = self.execute(f"cast block-number --rpc-url {rpc_url}")
+            raw = (result.get("raw_output") or result.get("output") or "").strip()
+            actual_block = self._parse_block_number(raw)
+            if actual_block is not None:
+                if abs(actual_block - expected_block) <= tolerance:
+                    self.logger.info(
+                        f"Fork block verified: requested={expected_block}, actual={actual_block}"
+                    )
+                    return actual_block
+                self.logger.warning(
+                    "Fork block mismatch: requested=%s, actual=%s (tolerance=%s) attempt=%s/%s",
+                    expected_block,
+                    actual_block,
+                    tolerance,
+                    attempt,
+                    attempts,
+                )
+            else:
+                self.logger.warning(
+                    "Unable to parse block number from anvil RPC output (attempt %s/%s): %s",
+                    attempt,
+                    attempts,
+                    raw[:200],
+                )
+            time.sleep(wait_sec)
+
+        error_msg = (
+            "Anvil fork block verification failed.\n\n"
+            f"Expected block: {expected_block}\n"
+            f"RPC reported block: {actual_block if actual_block is not None else 'unknown'}\n\n"
+            "This can happen if the upstream RPC is not an archive node or is rate limited.\n"
+            "To ensure reproducibility, use an archive RPC and retry.\n"
+        )
+        self.logger.error(error_msg)
+        raise RuntimeError(error_msg)
+
+    @staticmethod
+    def _parse_block_number(raw: str) -> int | None:
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if line.isdigit():
+                return int(line)
+        return None
 
     def _wait_for_anvil_ready(
         self,
@@ -259,14 +359,14 @@ class FoundryEnvironment(DockerEnvironment):
             )
             rpc_output = rpc_test.get("output", rpc_test.get("raw_output", ""))
 
-            # Check if we got a valid chain ID (a number)
-            rpc_output_clean = rpc_output.strip().split("\n")[-1].strip()
-            if rpc_output_clean.isdigit():
+            # Check if we got a valid chain ID (a number) anywhere in output
+            chain_id = self._parse_block_number(rpc_output or "")
+            if chain_id is not None:
                 self.logger.debug(
                     f"Anvil ready after {(attempt + 1) * poll_interval}s "
-                    f"(chain ID: {rpc_output_clean})"
+                    f"(chain ID: {chain_id})"
                 )
-                return {"running": True, "chain_id": int(rpc_output_clean)}
+                return {"running": True, "chain_id": int(chain_id)}
 
             # Log progress for long waits
             if attempt > 0 and attempt % 5 == 0:
