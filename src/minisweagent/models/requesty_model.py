@@ -108,6 +108,15 @@ class RequestyModel:
         self.cost += cost
         GLOBAL_MODEL_STATS.add(cost)
 
+        if "error" in response:
+            error = response["error"]
+            raise RequestyAPIError(
+                f"Requesty API error: {error.get('message', 'Unknown error')} (code: {error.get('code', 'unknown')})"
+            )
+
+        if "choices" not in response or not response["choices"]:
+            raise RequestyAPIError(f"Invalid Requesty API response: missing 'choices' field. Response: {response}")
+
         return {
             "content": response["choices"][0]["message"]["content"] or "",
             "extra": {

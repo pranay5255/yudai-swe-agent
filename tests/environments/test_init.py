@@ -2,6 +2,7 @@ import pytest
 
 from minisweagent.environments import get_environment_class
 from minisweagent.environments.local import LocalEnvironment
+from minisweagent.environments.exploit_environment_v2 import ExploitFoundryEnvironmentV2
 
 
 class TestGetEnvironmentClass:
@@ -14,6 +15,11 @@ class TestGetEnvironmentClass:
         """Test that get_environment_class returns LocalEnvironment when given shorthand."""
         env_class = get_environment_class("local")
         assert env_class is LocalEnvironment
+
+    def test_get_environment_class_exploit_foundry_v2_shorthand(self):
+        """Test that get_environment_class returns ExploitFoundryEnvironmentV2 for v2 shorthand."""
+        env_class = get_environment_class("exploit_foundry_v2")
+        assert env_class is ExploitFoundryEnvironmentV2
 
     def test_get_environment_class_invalid_spec(self):
         """Test that get_environment_class raises ValueError for invalid spec."""

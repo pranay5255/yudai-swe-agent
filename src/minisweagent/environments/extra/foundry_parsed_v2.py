@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 from typing import Any
 
 from minisweagent.environments.foundry_v2 import FoundryEnvironmentV2
@@ -33,6 +34,7 @@ class BlockchainCommandParserV2:
         re.IGNORECASE,
     )
     _HEX_32 = re.compile(r"^0x[a-fA-F0-9]{64}$")
+    _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
     def parse(self, command: str, result: dict[str, Any]) -> dict[str, Any] | None:
         output = result.get("output", "") or ""
@@ -65,25 +67,45 @@ class BlockchainCommandParserV2:
     def _detect_kind(self, cmd: str) -> str | None:
         subcommands = re.split(r"\s*&&\s*|\s*;\s*", cmd)
         for subcmd in subcommands:
-            if re.search(r"\bforge\s+build\b", subcmd):
+            tool, args = self._extract_tool_and_args(subcmd)
+            if tool == "forge" and args[:1] == ["build"]:
                 return "forge_build"
-            if re.search(r"\bforge\s+test\b", subcmd):
+            if tool == "forge" and args[:1] == ["test"]:
                 return "forge_test"
-            if re.search(r"\bforge\s+script\b", subcmd):
+            if tool == "forge" and args[:1] == ["script"]:
                 return "forge_script"
-            if re.search(r"\bslither\b", subcmd):
+            if tool == "slither":
                 return "slither"
-            if re.search(r"\bcast\s+call\b", subcmd):
+            if tool == "cast" and args[:1] == ["call"]:
                 return "cast_call"
-            if re.search(r"\bcast\s+block-number\b", subcmd):
+            if tool == "cast" and args[:1] == ["block-number"]:
                 return "cast_block_number"
-            if re.search(r"\bcast\s+send\b", subcmd):
+            if tool == "cast" and args[:1] == ["send"]:
                 return "cast_send"
-            if re.search(r"\bcast\s+balance\b", subcmd):
+            if tool == "cast" and args[:1] == ["balance"]:
                 return "cast_balance"
-            if re.search(r"\banvil\b", subcmd):
+            if tool == "anvil":
                 return "anvil"
         return None
+
+    def _extract_tool_and_args(self, subcmd: str) -> tuple[str, list[str]]:
+        try:
+            tokens = shlex.split(subcmd)
+        except ValueError:
+            tokens = subcmd.strip().split()
+
+        if not tokens:
+            return "", []
+
+        while tokens and self._ASSIGNMENT.match(tokens[0]):
+            tokens = tokens[1:]
+        while tokens and tokens[0] in {"nohup", "command", "builtin", "time"}:
+            tokens = tokens[1:]
+
+        if not tokens:
+            return "", []
+
+        return tokens[0], tokens[1:]
 
     def _parse_forge_build(self, output: str, returncode: int) -> dict[str, Any]:
         if returncode == 0:
