@@ -199,3 +199,7 @@ MuSe/node_modules/
 
 rl_results/
 cache/
+
+# Benchmark output artifacts
+exploit_results/*.json
+exploit_results_v2/*.json
