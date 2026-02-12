@@ -242,22 +242,34 @@ class FoundryEnvironment(DockerEnvironment):
 
         for attempt in range(max_attempts):
             # First check if process is still running
-            ps_result = self.execute("pgrep -f 'anvil.*--port' || echo 'not_running'")
-            ps_output = ps_result.get("output", ps_result.get("raw_output", ""))
+            ps_result = self.execute(
+                "pgrep -fa '(^|/)anvil([[:space:]]|$).*--port' || echo 'not_running'"
+            )
+            # Prefer raw_output: subclass parsers may rewrite "output"
+            ps_output = ps_result.get("raw_output", ps_result.get("output", ""))
 
             if "not_running" in ps_output or not ps_output.strip():
                 # Process died, get error from log
                 self.logger.debug("Anvil process not found, checking log for errors")
                 log_result = self.execute("cat /tmp/anvil.log 2>/dev/null || echo 'no_log'")
-                log_output = log_result.get("output", log_result.get("raw_output", ""))
+                log_output = log_result.get("raw_output", log_result.get("output", ""))
                 return self._diagnose_anvil_failure(log_output, fork_url, block_number)
 
             # Try to make an RPC call to verify Anvil is responding
             # Use cast chain-id as a simple connectivity test
-            rpc_test = self.execute(
-                f"cast chain-id --rpc-url {rpc_url} 2>&1 || echo 'rpc_failed'"
-            )
-            rpc_output = rpc_test.get("output", rpc_test.get("raw_output", ""))
+            rpc_test = self.execute(f"cast chain-id --rpc-url {rpc_url} 2>&1")
+            rpc_output = rpc_test.get("raw_output", rpc_test.get("output", ""))
+            if "command not found" in (rpc_output or "").lower():
+                return {
+                    "running": False,
+                    "error": (
+                        "Anvil readiness check failed: `cast` is not available in the container.\n\n"
+                        "Verify the Docker image includes Foundry tools (cast, anvil).\n"
+                        "Image: "
+                        f"{self._foundry_config.image}\n\n"
+                        f"Command output:\n{rpc_output[:500]}"
+                    ),
+                }
 
             # Check if we got a valid chain ID (a number)
             rpc_output_clean = rpc_output.strip().split("\n")[-1].strip()
@@ -280,11 +292,13 @@ class FoundryEnvironment(DockerEnvironment):
         # Timeout reached - get log for diagnosis
         self.logger.warning(f"Anvil did not become ready within {timeout}s")
         log_result = self.execute("cat /tmp/anvil.log 2>/dev/null || echo 'no_log'")
-        log_output = log_result.get("output", log_result.get("raw_output", ""))
+        log_output = log_result.get("raw_output", log_result.get("output", ""))
 
         # Check if process is still running (might be slow but not dead)
-        ps_result = self.execute("pgrep -f 'anvil.*--port' || echo 'not_running'")
-        ps_output = ps_result.get("output", ps_result.get("raw_output", ""))
+        ps_result = self.execute(
+            "pgrep -fa '(^|/)anvil([[:space:]]|$).*--port' || echo 'not_running'"
+        )
+        ps_output = ps_result.get("raw_output", ps_result.get("output", ""))
 
         if "not_running" not in ps_output and ps_output.strip():
             return {
