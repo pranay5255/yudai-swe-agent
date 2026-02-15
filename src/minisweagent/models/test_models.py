@@ -18,7 +18,9 @@ class DeterministicModelConfig(BaseModel):
         "Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions."
     )
     observation_template: str = "{{ output.output }}"
-    action_regex: str = r"```(?:mswea_bash_command|bash)\\s*\\n(.*?)\\n```"
+    # NOTE: This is a Python regex string (not a YAML-escaped string). Use single
+    # backslashes so \s and \n are interpreted by the regex engine.
+    action_regex: str = r"```(?:mswea_bash_command|bash|sh)\s*\n(.*?)\n```"
 
 
 class DeterministicModel:
