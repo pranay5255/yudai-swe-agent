@@ -33,7 +33,8 @@ class OpenRouterModelConfig(BaseModel):
         "Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions."
     )
     observation_template: str = "{{ output.output }}"
-    action_regex: str = r"```mswea_bash_command\\s*\\n(.*?)\\n```"
+    # Python regex string (not YAML-escaped). Keep single backslashes so \s/\n work.
+    action_regex: str = r"```(?:mswea_bash_command|bash|sh)\s*\n(.*?)\n```"
     multimodal_regex: str | None = None
 
 
@@ -100,7 +101,19 @@ class OpenRouterModel:
 
     def query(self, messages: list[dict], tools: list[dict] | None = None, **kwargs) -> dict:
         response = self._query(self._prepare_messages_for_api(messages), **kwargs)
-        content = response["choices"][0]["message"]["content"] or ""
+        if "error" in response:
+            error = response["error"] or {}
+            raise OpenRouterAPIError(
+                f"OpenRouter API error: {error.get('message', 'Unknown error')} (code: {error.get('code', 'unknown')})"
+            )
+
+        choices = response.get("choices") or []
+        if not choices:
+            raise OpenRouterAPIError(
+                f"Invalid OpenRouter API response: missing 'choices' field. Response: {response}"
+            )
+
+        content = (choices[0].get("message") or {}).get("content") or ""
         usage = response.get("usage", {})
         cost = usage.get("cost", 0.0)
         if cost <= 0.0 and self.config.cost_tracking != "ignore_errors":
@@ -157,25 +170,6 @@ class OpenRouterModel:
         self.n_calls += 1
         self.cost += cost
         GLOBAL_MODEL_STATS.add(cost)
-
-<<<<<<< HEAD
-        if "error" in response:
-            error = response["error"]
-            raise OpenRouterAPIError(
-                f"OpenRouter API error: {error.get('message', 'Unknown error')} (code: {error.get('code', 'unknown')})"
-            )
-
-        if "choices" not in response or not response["choices"]:
-            raise OpenRouterAPIError(f"Invalid OpenRouter API response: missing 'choices' field. Response: {response}")
-
-        return {
-            "content": response["choices"][0]["message"]["content"] or "",
-            "extra": {
-                "response": response,  # already is json
-            },
-        }
-=======
->>>>>>> ec8042e (feat: v2 tool-calling agent flow)
 
 class OpenRouterTextBasedModel(OpenRouterModel):
     pass

@@ -1,4 +1,4 @@
-"""Foundry development environment for smart contract development and security analysis (V2).
+"""Foundry development environment for smart contract development and security analysis (V3).
 
 This environment extends DockerEnvironment with Foundry-specific features:
 - Pre-configured with Foundry tools (forge, cast, anvil, chisel)
@@ -30,8 +30,8 @@ def _mask_api_key(url: str) -> str:
     return re.sub(r"(/)[a-f0-9]{32,}(/|$)", r"\1****\2", url)
 
 
-class FoundryEnvironmentConfigV2(BaseModel):
-    """Configuration for Foundry development environment (V2)."""
+class FoundryEnvironmentConfigV3(BaseModel):
+    """Configuration for Foundry development environment (V3)."""
 
     # Docker image settings
     image: str = "yudai/foundry-full:latest"
@@ -107,8 +107,8 @@ class FoundryEnvironmentConfigV2(BaseModel):
     """Timeout for pulling Docker image. Foundry image is ~1GB."""
 
 
-class FoundryEnvironmentV2(DockerEnvironment):
-    """Docker environment specialized for Foundry smart contract development (V2).
+class FoundryEnvironmentV3(DockerEnvironment):
+    """Docker environment specialized for Foundry smart contract development (V3).
 
     Extends DockerEnvironment with:
     - Volume mounting for host Foundry projects
@@ -117,7 +117,7 @@ class FoundryEnvironmentV2(DockerEnvironment):
     - Foundry-specific template variables
 
     Example:
-        >>> env = FoundryEnvironmentV2(project_path="/path/to/foundry/project")
+        >>> env = FoundryEnvironmentV3(project_path="/path/to/foundry/project")
         >>> result = env.execute("forge build")
         >>> print(result["output"])
     """
@@ -125,7 +125,7 @@ class FoundryEnvironmentV2(DockerEnvironment):
     def __init__(
         self,
         *,
-        config_class: type = FoundryEnvironmentConfigV2,
+        config_class: type = FoundryEnvironmentConfigV3,
         logger: logging.Logger | None = None,
         **kwargs,
     ):
@@ -136,7 +136,7 @@ class FoundryEnvironmentV2(DockerEnvironment):
             logger: Optional logger instance
             **kwargs: Config fields passed to config_class
         """
-        self.logger = logger or logging.getLogger("minisweagent.environment.foundry_v2")
+        self.logger = logger or logging.getLogger("minisweagent.environment.foundry_v3")
 
         # Parse our config first to extract foundry-specific settings
         self._foundry_config = config_class(**kwargs)
@@ -166,10 +166,10 @@ class FoundryEnvironmentV2(DockerEnvironment):
             pull_timeout=self._foundry_config.pull_timeout,
         )
 
-        self.logger.info("Foundry environment initialized (V2)")
+        self.logger.info("Foundry environment initialized (V3)")
 
     def get_template_vars(self) -> dict[str, Any]:
-        """Return template variables including Foundry-specific ones (V2).
+        """Return template variables including Foundry-specific ones (V3).
 
         Returns:
             Dict with config values plus Foundry-specific variables:
@@ -195,7 +195,7 @@ class FoundryEnvironmentV2(DockerEnvironment):
         block_number: int | None = None,
         startup_timeout: int | None = None,
     ) -> dict[str, Any]:
-        """Start anvil local testnet in background (V2).
+        """Start anvil local testnet in background (V3).
 
         Args:
             fork_url: RPC URL to fork from. Uses config value if not provided.

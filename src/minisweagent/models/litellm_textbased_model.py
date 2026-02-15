@@ -7,7 +7,8 @@ from minisweagent.models.utils.textbased import format_text_observation_messages
 
 
 class LitellmTextBasedModelConfig(LitellmModelConfig):
-    action_regex: str = r"```mswea_bash_command\\s*\\n(.*?)\\n```"
+    # Python regex string (not YAML-escaped). Keep single backslashes so \s/\n work.
+    action_regex: str = r"```(?:mswea_bash_command|bash|sh)\s*\n(.*?)\n```"
 
 
 class LitellmTextBasedModel(LitellmModel):
