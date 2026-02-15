@@ -29,7 +29,8 @@ class RequestyModelConfig(BaseModel):
         "Please always provide EXACTLY ONE action in triple backticks, found {{actions|length}} actions."
     )
     observation_template: str = "{{ output.output }}"
-    action_regex: str = r"```mswea_bash_command\\s*\\n(.*?)\\n```"
+    # Python regex string (not YAML-escaped). Keep single backslashes so \s/\n work.
+    action_regex: str = r"```(?:mswea_bash_command|bash|sh)\s*\n(.*?)\n```"
     multimodal_regex: str | None = None
 
 
