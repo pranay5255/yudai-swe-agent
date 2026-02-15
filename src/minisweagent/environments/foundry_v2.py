@@ -9,12 +9,25 @@ This environment extends DockerEnvironment with Foundry-specific features:
 """
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from minisweagent.environments.docker import DockerEnvironment
+
+
+def _mask_api_key(url: str) -> str:
+    """Best-effort masking for API keys embedded in RPC URLs.
+
+    This prevents accidental secret leakage into logs or prompts (e.g. Alchemy /v2/<key>).
+    """
+    if not url:
+        return url
+    url = re.sub(r"(/v[0-9]+/)[a-zA-Z0-9_-]{10,}", r"\1****", url)
+    url = re.sub(r"(api[_-]?key=)[a-zA-Z0-9_-]+", r"\1****", url, flags=re.IGNORECASE)
+    return re.sub(r"(/)[a-f0-9]{32,}(/|$)", r"\1****\2", url)
 
 
 class FoundryEnvironmentConfigV2(BaseModel):
@@ -169,7 +182,8 @@ class FoundryEnvironmentV2(DockerEnvironment):
             "foundry_available": True,
             "project_mounted": bool(self._foundry_config.project_path),
             "project_path": self._foundry_config.project_path,
-            "anvil_fork_url": self._foundry_config.anvil_fork_url,
+            # Never expose raw RPC URLs with embedded API keys in template vars.
+            "anvil_fork_url": _mask_api_key(self._foundry_config.anvil_fork_url),
             "anvil_port": self._foundry_config.anvil_port,
             "anvil_verify_fork_block": self._foundry_config.verify_fork_block,
             "anvil_verify_fork_tolerance": self._foundry_config.verify_fork_block_tolerance,
@@ -198,6 +212,7 @@ class FoundryEnvironmentV2(DockerEnvironment):
                          including archive RPC guidance for historical fork failures.
         """
         fork_url = fork_url or self._foundry_config.anvil_fork_url
+        fork_url_safe = _mask_api_key(fork_url)
         port = self._foundry_config.anvil_port
         timeout = (
             self._foundry_config.anvil_startup_timeout
@@ -222,11 +237,19 @@ class FoundryEnvironmentV2(DockerEnvironment):
             f"echo \"Anvil PID: $ANVIL_PID\""
         )
 
-        self.logger.info(f"Starting Anvil: {anvil_cmd}")
+        # Log a masked command so RPC API keys do not leak.
+        log_cmd_parts = [f"anvil --port {port}"]
+        if fork_url:
+            log_cmd_parts.append(f"--fork-url {fork_url_safe}")
+            if block_number:
+                log_cmd_parts.append(f"--fork-block-number {block_number}")
+        if self._foundry_config.anvil_extra_args:
+            log_cmd_parts.extend(self._normalize_anvil_args(self._foundry_config.anvil_extra_args))
+        self.logger.info("Starting Anvil: %s", " ".join(log_cmd_parts))
         result = self.execute(background_cmd)
 
         # Wait for Anvil to be ready by testing RPC connectivity
-        anvil_status = self._wait_for_anvil_ready(fork_url, block_number, timeout=timeout)
+        anvil_status = self._wait_for_anvil_ready(fork_url_safe, block_number, timeout=timeout)
         if not anvil_status["running"]:
             error_msg = anvil_status.get("error", "Unknown error")
             self.logger.error(f"Anvil failed to start: {error_msg}")
@@ -242,7 +265,7 @@ class FoundryEnvironmentV2(DockerEnvironment):
             verified = actual_block is not None
 
         self._last_fork_info = {
-            "fork_url": fork_url,
+            "fork_url": fork_url_safe,
             "requested_block": block_number,
             "actual_block": actual_block,
             "verified": verified,
