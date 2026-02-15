@@ -47,7 +47,9 @@ class DefaultAgent:
         )
 
     def add_message(self, role: str, content: str, **kwargs):
-        self.messages.append(self.model.format_message(role, content, timestamp=time.time(), **kwargs))
+        message_kwargs = dict(kwargs)
+        message_kwargs.setdefault("timestamp", time.time())
+        self.messages.append(self.model.format_message(role, content, **message_kwargs))
 
     def run(self, task: str, **kwargs) -> RunResult:
         """Run step() until agent is finished. Return exit info dict."""
@@ -59,9 +61,11 @@ class DefaultAgent:
             try:
                 self.step()
             except InterruptAgentFlow as e:
-                message = self.model.format_message(
-                    "user", str(e), timestamp=time.time(), **getattr(e, "extra", {})
-                )
+                message_kwargs = dict(getattr(e, "extra", {}) or {})
+                # Some model layers attach timestamps in exception metadata (e.g. format errors).
+                # Avoid passing duplicate kwargs.
+                message_kwargs.setdefault("timestamp", time.time())
+                message = self.model.format_message("user", str(e), **message_kwargs)
                 self.messages.append(message)
                 if isinstance(e, Submitted):
                     return RunResult({
@@ -87,12 +91,11 @@ class DefaultAgent:
         if 0 < self.config.step_limit <= self.n_calls or 0 < self.config.cost_limit <= self.cost:
             raise LimitsExceeded("Limits exceeded.")
         response = self.model.query(self.messages, tools=self.env.get_tools())
-        message = self.model.format_message(
-            "assistant",
-            response.get("content", ""),
-            timestamp=time.time(),
-            **response.get("extra", {}),
-        )
+        response_extra = response.get("extra", {}) or {}
+        message_kwargs = dict(response_extra)
+        # Some model layers attach timestamps in response metadata; avoid duplicate kwargs.
+        message_kwargs.setdefault("timestamp", time.time())
+        message = self.model.format_message("assistant", response.get("content", ""), **message_kwargs)
         self.messages.append(message)
         cost = response.get("extra", {}).get("cost", 0.0) or 0.0
         self.cost += cost
