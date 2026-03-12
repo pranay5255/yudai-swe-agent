@@ -1,0 +1,22 @@
+FROM yudai-base:latest
+
+WORKDIR /templates/sol-0.4-standalone
+
+# Switch to solc 0.4.26 for this template
+RUN . "${VENV_MAIN}/bin/activate" \
+    && solc-select use 0.4.26
+
+# Initialize a Foundry project with no git
+RUN forge init --no-commit . \
+    && rm -f src/Counter.sol test/Counter.t.sol script/Counter.s.sol
+
+# Write a minimal 0.4.26-compatible contract as starting point
+RUN echo 'pragma solidity ^0.4.26;\n\ncontract Template {\n    address public owner;\n\n    function Template() public {\n        owner = msg.sender;\n    }\n}' > src/Template.sol
+
+# Verify template builds
+RUN forge build --use solc:0.4.26 || true
+
+WORKDIR /workspace
+
+LABEL description="Yudai template: Solidity 0.4.x standalone"
+LABEL solc.version="0.4.26"
