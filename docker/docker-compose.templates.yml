@@ -10,8 +10,6 @@
 #   docker compose -f docker/docker-compose.templates.yml push         # Push all
 # =============================================================================
 
-version: '3.8'
-
 services:
   # =============================================================================
   # BASE IMAGE (Parent)
