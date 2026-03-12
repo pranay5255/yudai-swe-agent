@@ -7,8 +7,6 @@ import re
 import shlex
 from typing import Any
 
-from minisweagent.environments.foundry_v2 import FoundryEnvironmentV2
-
 
 class BlockchainCommandParserV2:
     """Parse common Foundry/chain command outputs into concise summaries (V2)."""
@@ -278,23 +276,3 @@ class BlockchainCommandParserV2:
         if value[2:26] != "0" * 24:
             return None
         return "0x" + value[26:]
-
-
-class ParsedFoundryEnvironmentV2(FoundryEnvironmentV2):
-    """Foundry environment with parsing for blockchain command outputs (V2)."""
-
-    def __init__(self, *args, parser: BlockchainCommandParserV2 | None = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._parser = parser or BlockchainCommandParserV2()
-
-    def execute(self, command: str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
-        result = super().execute(command, cwd=cwd, timeout=timeout)
-        parsed = self._parser.parse(command, result)
-        if not parsed:
-            return result
-
-        result = dict(result)
-        result["parsed"] = parsed
-        result.setdefault("raw_output", result.get("output", ""))
-        result["output"] = parsed.get("summary", result["output"])
-        return result
