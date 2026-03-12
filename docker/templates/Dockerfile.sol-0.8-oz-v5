@@ -1,0 +1,31 @@
+FROM yudai-base:latest
+
+WORKDIR /templates/sol-0.8-oz-v5
+
+# Ensure solc 0.8.24 is active
+RUN . "${VENV_MAIN}/bin/activate" \
+    && solc-select use 0.8.24
+
+# Initialize a Foundry project with no git
+RUN forge init --no-commit .
+
+# Install OpenZeppelin Contracts v5.0.2
+RUN forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-commit
+
+# Configure remappings
+RUN echo '@openzeppelin/=lib/openzeppelin-contracts/' >> remappings.txt
+
+# Remove default Counter contract
+RUN rm -f src/Counter.sol test/Counter.t.sol script/Counter.s.sol
+
+# Write a minimal OZ v5 contract as starting point
+RUN printf 'pragma solidity ^0.8.20;\n\nimport "@openzeppelin/contracts/access/Ownable.sol";\n\ncontract Template is Ownable {\n    constructor(address initialOwner) Ownable(initialOwner) {}\n}\n' > src/Template.sol
+
+# Pre-compile to cache artifacts
+RUN forge build
+
+WORKDIR /workspace
+
+LABEL description="Yudai template: Solidity 0.8.x + OpenZeppelin v5.0.2"
+LABEL solc.version="0.8.24"
+LABEL openzeppelin.version="v5.0.2"
