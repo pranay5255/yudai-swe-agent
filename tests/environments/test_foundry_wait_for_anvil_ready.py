@@ -4,7 +4,6 @@ from types import SimpleNamespace
 import pytest
 
 from minisweagent.environments.foundry import FoundryEnvironment
-from minisweagent.environments.foundry_v2 import FoundryEnvironmentV2
 
 
 def _make_env(env_cls):
@@ -14,7 +13,7 @@ def _make_env(env_cls):
     return env
 
 
-@pytest.mark.parametrize("env_cls", [FoundryEnvironment, FoundryEnvironmentV2])
+@pytest.mark.parametrize("env_cls", [FoundryEnvironment])
 def test_wait_for_anvil_ready_uses_raw_output_for_failure_diagnosis(env_cls):
     env = _make_env(env_cls)
 
@@ -41,7 +40,7 @@ def test_wait_for_anvil_ready_uses_raw_output_for_failure_diagnosis(env_cls):
     assert "anvil: started" not in status["error"]
 
 
-@pytest.mark.parametrize("env_cls", [FoundryEnvironment, FoundryEnvironmentV2])
+@pytest.mark.parametrize("env_cls", [FoundryEnvironment])
 def test_wait_for_anvil_ready_reports_missing_cast_from_raw_output(env_cls):
     env = _make_env(env_cls)
 

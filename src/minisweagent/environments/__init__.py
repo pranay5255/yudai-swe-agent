@@ -15,7 +15,6 @@ _ENVIRONMENT_MAPPING = {
     "foundry_v3": "minisweagent.environments.foundry_v3.FoundryEnvironmentV3",
     "foundry_parsed": "minisweagent.environments.extra.foundry_parsed.ParsedFoundryEnvironment",
     "exploit_foundry": "minisweagent.environments.exploit_environment.ExploitFoundryEnvironment",
-    "exploit_foundry_v2": "minisweagent.environments.exploit_environment_v2.ExploitFoundryEnvironmentV2",
     "exploit_foundry_v3": "minisweagent.environments.exploit_environment_v3.ExploitFoundryEnvironmentV3",
 }
 
