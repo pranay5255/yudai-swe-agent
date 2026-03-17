@@ -29,7 +29,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH="${VENV_MAIN}/bin:/root/.solc-select:/root/.cargo/bin:/root/.local/bin:${PATH}"
 
 # Install system dependencies including Python 3.12
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN echo "[$(date +%T)] Starting system dependencies installation..." \
+    && apt-get update && apt-get install -y --no-install-recommends \
       software-properties-common \
       ca-certificates \
       curl \
@@ -41,31 +42,40 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libssl-dev \
       libffi-dev \
       gnupg \
-      gpg-agent \
-    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && add-apt-repository ppa:deadsnakes/ppa -y --no-update \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
       python${PYTHON_VERSION} \
       python${PYTHON_VERSION}-venv \
       python${PYTHON_VERSION}-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "[$(date +%T)] System dependencies installed"
 
 # Install uv package manager
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN echo "[$(date +%T)] Installing uv package manager..." \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && echo "[$(date +%T)] uv installed"
 
 # Create main virtual environment using uv for Slither and other tools
-RUN uv venv "${VENV_MAIN}" --python ${PYTHON_VERSION} \
+RUN echo "[$(date +%T)] Creating main venv and installing Slither (this may take 2-3 minutes)..." \
+    && uv venv "${VENV_MAIN}" --python ${PYTHON_VERSION} \
     && . "${VENV_MAIN}/bin/activate" \
     && uv pip install "slither-analyzer==${SLITHER_VERSION}" \
-    && uv pip install solc-select
+    && uv pip install solc-select \
+    && echo "[$(date +%T)] Slither and solc-select installed"
 
 # Create separate virtual environment for Mythril
-RUN uv venv "${VENV_MYTHRIL}" --python ${PYTHON_VERSION} \
+RUN echo "[$(date +%T)] Installing Mythril (this is SLOW, 5-10 minutes due to huge dependency tree)..." \
+    && python${PYTHON_VERSION} -m venv "${VENV_MYTHRIL}" --upgrade-deps \
     && . "${VENV_MYTHRIL}/bin/activate" \
-    && uv pip install "mythril==${MYTHRIL_VERSION}"
+    && pip install --upgrade pip setuptools wheel \
+    && pip install "mythril==${MYTHRIL_VERSION}" setuptools \
+    && python -c "import pkg_resources; print('pkg_resources OK')" \
+    && echo "[$(date +%T)] Mythril installed"
 
 # Install multiple solc versions for compatibility
-RUN . "${VENV_MAIN}/bin/activate" \
+RUN echo "[$(date +%T)] Installing 6 solc versions (2-3 minutes)..." \
+    && . "${VENV_MAIN}/bin/activate" \
     && solc-select install 0.4.26 \
     && solc-select install 0.5.17 \
     && solc-select install 0.6.12 \
@@ -73,14 +83,18 @@ RUN . "${VENV_MAIN}/bin/activate" \
     && solc-select install 0.8.20 \
     && solc-select install 0.8.24 \
     && solc-select use "${SOLC_VERSION}" \
-    && ln -sf /root/.solc-select/solc /usr/local/bin/solc
+    && ln -sf /root/.solc-select/solc /usr/local/bin/solc \
+    && echo "[$(date +%T)] Solc versions installed"
 
 # Install Aderyn
-RUN curl -fsSL https://github.com/Cyfrin/aderyn/releases/download/aderyn-v0.6.5/aderyn-installer.sh | bash
+RUN echo "[$(date +%T)] Installing Aderyn..." \
+    && curl -fsSL https://github.com/Cyfrin/aderyn/releases/download/aderyn-v0.6.5/aderyn-installer.sh | bash \
+    && echo "[$(date +%T)] Aderyn installed"
 
 # Install Echidna
 ARG TARGETARCH
-RUN case "${TARGETARCH}" in \
+RUN echo "[$(date +%T)] Installing Echidna..." \
+    && case "${TARGETARCH}" in \
       amd64) echidna_arch="x86_64" ;; \
       arm64) echidna_arch="aarch64" ;; \
       *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
@@ -90,7 +104,8 @@ RUN case "${TARGETARCH}" in \
     && tar -xzf /tmp/echidna.tar.gz -C /tmp \
     && install -m 0755 /tmp/echidna /usr/local/bin/echidna \
     && install -m 0755 /tmp/echidna /usr/local/bin/echidna-test \
-    && rm -rf /tmp/echidna.tar.gz /tmp/echidna
+    && rm -rf /tmp/echidna.tar.gz /tmp/echidna \
+    && echo "[$(date +%T)] Echidna installed"
 
 # Create wrapper script for myth to use the correct venv
 RUN echo '#!/bin/bash' > /usr/local/bin/myth \
