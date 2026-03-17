@@ -81,8 +81,16 @@ class DockerEnvironment:
             capture_output=True,
             text=True,
             timeout=self.config.pull_timeout,  # docker pull might take a while
-            check=True,
+            check=False,
         )
+        if result.returncode != 0:
+            details = "\n".join(part.strip() for part in (result.stdout, result.stderr) if part and part.strip())
+            if not details:
+                details = f"{self.config.executable} run exited with status {result.returncode}"
+            raise RuntimeError(
+                f"Failed to start container from image '{self.config.image}' with "
+                f"'{self.config.executable}': {details}"
+            )
         self.logger.info(f"Started container {container_name} with ID {result.stdout.strip()}")
         self.container_id = result.stdout.strip()
 
