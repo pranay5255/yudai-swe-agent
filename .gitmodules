@@ -1,3 +1,6 @@
 [submodule "yudai-grep"]
 	path = yudai-grep
 	url = https://github.com/pranay5255/yudai-grep.git
+[submodule "evmBench-frontier-evals"]
+	path = evmBench-frontier-evals
+	url = https://github.com/pranay5255/evmBench-frontier-evals.git

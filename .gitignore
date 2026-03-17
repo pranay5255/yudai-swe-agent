@@ -5,6 +5,9 @@ preds.json
 .env
 traj.json
 
+# All JSON files
+*.json
+
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
@@ -200,6 +203,7 @@ MuSe/node_modules/
 rl_results/
 cache/
 
-# Benchmark output artifacts
-exploit_results/*.json
-exploit_results_v2/*.json
+# Benchmark output artifacts (covered by *.json above)
+exploit_results/
+exploit_results_v2/
+exploit_results_v3/
