@@ -21,7 +21,7 @@ from minisweagent.exceptions import LimitsExceeded, Submitted, UserInterruption
 from minisweagent.models.utils.actions_toolcall import build_tool_call
 from minisweagent.utils.actions import get_action_command
 
-console = Console(highlight=False)
+console = Console(highlight=False, force_terminal=True, force_interactive=False)
 prompt_session = PromptSession(history=FileHistory(global_config_dir / "interactive_history.txt"))
 
 
