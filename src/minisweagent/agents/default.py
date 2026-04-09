@@ -15,6 +15,10 @@ class AgentConfig(BaseModel):
     instance_template: str
     step_limit: int = 0
     cost_limit: float = 3.0
+    planner_mode: bool = False
+    """When True, allows multiple bash commands per turn (for context gathering / recon)."""
+    planner_action_regex: str | None = None
+    """Regex to capture multiple bash blocks when planner_mode is enabled."""
 
 
 def _get_class_name_with_module(obj) -> str:
@@ -68,11 +72,13 @@ class DefaultAgent:
                 message = self.model.format_message("user", str(e), **message_kwargs)
                 self.messages.append(message)
                 if isinstance(e, Submitted):
-                    return RunResult({
-                        "submission": str(e),
-                        "exit_status": type(e).__name__,
-                        **e.extra,
-                    })
+                    return RunResult(
+                        {
+                            "submission": str(e),
+                            "exit_status": type(e).__name__,
+                            **e.extra,
+                        }
+                    )
                 if isinstance(e, FormatError):
                     self.cost += e.extra.get("cost", 0.0) or 0.0
                     self.n_calls += 1
@@ -90,7 +96,12 @@ class DefaultAgent:
         """Query the model and return the response message."""
         if 0 < self.config.step_limit <= self.n_calls or 0 < self.config.cost_limit <= self.cost:
             raise LimitsExceeded("Limits exceeded.")
-        response = self.model.query(self.messages, tools=self.env.get_tools())
+        response = self.model.query(
+            self.messages,
+            tools=self.env.get_tools(),
+            planner_mode=self.config.planner_mode,
+            planner_action_regex=self.config.planner_action_regex,
+        )
         response_extra = response.get("extra", {}) or {}
         message_kwargs = dict(response_extra)
         # Some model layers attach timestamps in response metadata; avoid duplicate kwargs.
