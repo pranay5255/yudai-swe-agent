@@ -66,11 +66,12 @@ RUN echo "[$(date +%T)] Creating main venv and installing Slither (this may take
 
 # Create separate virtual environment for Mythril
 RUN echo "[$(date +%T)] Installing Mythril (this is SLOW, 5-10 minutes due to huge dependency tree)..." \
-    && python${PYTHON_VERSION} -m venv "${VENV_MYTHRIL}" --upgrade-deps \
+    && python${PYTHON_VERSION} -m venv "${VENV_MYTHRIL}" \
     && . "${VENV_MYTHRIL}/bin/activate" \
-    && pip install --upgrade pip setuptools wheel \
-    && pip install "mythril==${MYTHRIL_VERSION}" setuptools \
-    && python -c "import pkg_resources; print('pkg_resources OK')" \
+    && pip install --upgrade pip wheel \
+    && pip install "setuptools<75" \
+    && pip install "mythril==${MYTHRIL_VERSION}" "setuptools<75" \
+    && python -c "import mythril; print('mythril OK')" \
     && echo "[$(date +%T)] Mythril installed"
 
 # Install multiple solc versions for compatibility
