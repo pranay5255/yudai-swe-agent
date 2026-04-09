@@ -100,6 +100,8 @@ class OpenRouterModel:
             raise OpenRouterAPIError(f"Request failed: {e}") from e
 
     def query(self, messages: list[dict], tools: list[dict] | None = None, **kwargs) -> dict:
+        planner_mode = kwargs.pop("planner_mode", False)
+        planner_action_regex = kwargs.pop("planner_action_regex", None)
         response = self._query(self._prepare_messages_for_api(messages), **kwargs)
         if "error" in response:
             error = response["error"] or {}
@@ -109,9 +111,7 @@ class OpenRouterModel:
 
         choices = response.get("choices") or []
         if not choices:
-            raise OpenRouterAPIError(
-                f"Invalid OpenRouter API response: missing 'choices' field. Response: {response}"
-            )
+            raise OpenRouterAPIError(f"Invalid OpenRouter API response: missing 'choices' field. Response: {response}")
 
         content = (choices[0].get("message") or {}).get("content") or ""
         usage = response.get("usage", {})
@@ -133,6 +133,8 @@ class OpenRouterModel:
                     action_regex=self.config.action_regex,
                     format_error_template=self.config.format_error_template,
                     template_vars=self.config.model_dump(),
+                    planner_action_regex=planner_action_regex,
+                    planner_mode=planner_mode,
                 )
             except FormatError as e:
                 extra = {"response": response, "cost": cost, "timestamp": time.time()}
@@ -170,6 +172,7 @@ class OpenRouterModel:
         self.n_calls += 1
         self.cost += cost
         GLOBAL_MODEL_STATS.add(cost)
+
 
 class OpenRouterTextBasedModel(OpenRouterModel):
     pass
