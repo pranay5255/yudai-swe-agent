@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS × EVMBench — Integration Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d13;
+    --surface: #13151f;
+    --surface2: #1c1f2e;
+    --surface3: #252840;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.14);
+    --text: #e8eaf6;
+    --text-dim: #7b82b0;
+
+    --detect:     #06b6d4;
+    --detect-dim: rgba(6,182,212,0.12);
+    --exploit:    #f97316;
+    --exploit-dim:rgba(249,115,22,0.12);
+    --patch:      #22c55e;
+    --patch-dim:  rgba(34,197,94,0.12);
+    --tts:        #a855f7;
+    --tts-dim:    rgba(168,85,247,0.12);
+    --cache:      #eab308;
+    --cache-dim:  rgba(234,179,8,0.12);
+    --warn:       #f43f5e;
+    --warn-dim:   rgba(244,63,94,0.12);
+    --openrouter: #60a5fa;
+    --openrouter-dim: rgba(96,165,250,0.12);
+
+    --font-body: 'Syne', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+    --r: 10px;
+    --r-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f4f5fb;
+      --surface: #ffffff;
+      --surface2: #eef0fa;
+      --surface3: #e4e7f5;
+      --border: rgba(0,0,0,0.08);
+      --border-bright: rgba(0,0,0,0.16);
+      --text: #1a1d2e;
+      --text-dim: #6b71a0;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -20%, rgba(168,85,247,0.06) 0%, transparent 60%);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── LAYOUT ── */
+  .page { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* ── HEADER ── */
+  header { margin-bottom: 52px; }
+  .kicker { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--tts); font-family: var(--font-mono); margin-bottom: 10px; }
+  h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; line-height: 1.1; }
+  .h1-sub { color: var(--text-dim); font-weight: 400; }
+  .subtitle { margin-top: 14px; color: var(--text-dim); max-width: 640px; font-size: 15px; }
+
+  /* ── SECTION HEADERS ── */
+  .section { margin-top: 56px; }
+  .section-label {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .section-label .dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .section-label h2 { font-size: 20px; font-weight: 700; }
+  .section-label .tag {
+    font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.1em;
+    padding: 2px 8px; border-radius: 4px; text-transform: uppercase;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; margin-bottom: 10px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* ── PHASE CARDS ── */
+  .phase-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .phase-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 3px 0 0 3px;
+    background: var(--accent, #888);
+  }
+  .phase-num {
+    font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .phase-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+  .phase-status {
+    display: inline-block;
+    font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 4px;
+    margin-bottom: 14px;
+  }
+
+  /* ── STEP LIST ── */
+  .step-list { list-style: none; }
+  .step-list li {
+    display: flex; gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    min-width: 0;
+  }
+  .step-list li:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-size: 11px; font-weight: 700;
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-top: 1px;
+  }
+  .step-content { min-width: 0; overflow-wrap: break-word; }
+  .step-file {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--tts); display: block; margin-top: 3px;
+    word-break: break-all;
+  }
+
+  /* ── CODE CHIPS ── */
+  code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text);
+    margin: 10px 0;
+  }
+  .code-comment { color: var(--text-dim); }
+  .code-kw { color: var(--tts); }
+  .code-str { color: var(--detect); }
+  .code-fn { color: var(--cache); }
+
+  /* ── MERMAID WRAP ── */
+  .mermaid-wrap {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    overflow: hidden;
+    margin: 16px 0;
+  }
+  .mermaid-wrap .zoom-controls {
+    position: absolute;
+    top: 10px; right: 10px;
+    display: flex; gap: 6px;
+    z-index: 10;
+  }
+  .zoom-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .zoom-btn:hover { background: var(--surface3); }
+  .mermaid-inner {
+    overflow: auto;
+    cursor: grab;
+    padding: 20px;
+    min-height: 200px;
+    user-select: none;
+  }
+  .mermaid-inner.panning { cursor: grabbing; }
+
+  /* ── INLINE PIPELINE DIAGRAM ── */
+  .pipeline {
+    display: flex; align-items: stretch;
+    gap: 0; overflow-x: auto;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    margin: 14px 0;
+  }
+  .pipe-node {
+    flex: 1; min-width: 100px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    position: relative;
+  }
+  .pipe-node .pn-label { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+  .pipe-node .pn-name { font-weight: 700; color: var(--text); font-size: 12px; }
+  .pipe-arrow {
+    display: flex; align-items: center; padding: 0 4px;
+    color: var(--text-dim); font-size: 18px; flex-shrink: 0;
+  }
+
+  /* ── ALERT BOXES ── */
+  .alert {
+    display: flex; gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--r-sm);
+    margin: 12px 0;
+    border: 1px solid;
+    font-size: 14px;
+  }
+  .alert-icon { flex-shrink: 0; font-size: 16px; }
+  .alert-warn { background: var(--warn-dim); border-color: var(--warn); color: var(--text); }
+  .alert-info { background: var(--openrouter-dim); border-color: var(--openrouter); color: var(--text); }
+  .alert-tts  { background: var(--tts-dim); border-color: var(--tts); color: var(--text); }
+  .alert-cache { background: var(--cache-dim); border-color: var(--cache); color: var(--text); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 14px;
+    border-bottom: 2px solid var(--border-bright);
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:hover td { background: var(--surface2); }
+  .td-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+  /* ── MODE BADGES ── */
+  .badge {
+    display: inline-block; font-size: 10px; font-family: var(--font-mono);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 4px; font-weight: 700;
+  }
+  .badge-detect  { background: var(--detect-dim);  color: var(--detect); }
+  .badge-exploit { background: var(--exploit-dim); color: var(--exploit); }
+  .badge-patch   { background: var(--patch-dim);   color: var(--patch); }
+  .badge-tts     { background: var(--tts-dim);     color: var(--tts); }
+  .badge-cache   { background: var(--cache-dim);   color: var(--cache); }
+  .badge-warn    { background: var(--warn-dim);    color: var(--warn); }
+  .badge-ok      { background: rgba(34,197,94,0.12); color: #22c55e; }
+
+  /* ── HOOK ANNOTATION ── */
+  .hook-row {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 14px;
+    border-radius: var(--r-sm);
+    background: var(--surface2);
+    border-left: 3px solid var(--accent, #888);
+    margin: 8px 0;
+    font-size: 13px;
+  }
+  .hook-row .hook-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--text-dim);
+  }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.5s ease both; }
+  .fade-up:nth-child(2) { animation-delay: 0.07s; }
+  .fade-up:nth-child(3) { animation-delay: 0.14s; }
+  .fade-up:nth-child(4) { animation-delay: 0.21s; }
+  .fade-up:nth-child(5) { animation-delay: 0.28s; }
+  @media (prefers-reduced-motion: reduce) { .fade-up { animation: none; } }
+
+  /* ── UTILITY ── */
+  .text-dim { color: var(--text-dim); }
+  .mono { font-family: var(--font-mono); }
+  .small { font-size: 12px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .gap-block { display: flex; flex-direction: column; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══ HEADER ══ -->
+  <header class="fade-up">
+    <div class="kicker">EVMBench × Test-Time Scaling</div>
+    <h1>TTS Integration Map<br><span class="h1-sub">+ cache/sources &amp; OpenRouter</span></h1>
+    <p class="subtitle">Where exactly to hook TTS into the Yudai EVMBench pipeline — with concrete file locations, code insertion points, and how pre-fetched contract sources feed both pipelines.</p>
+  </header>
+
+  <!-- ══ SECTION 0: Compatibility Answer ══ -->
+  <div class="section fade-up">
+    <div class="section-label">
+      <div class="dot" style="background:var(--openrouter)"></div>
+      <h2>Model + Model-Class Compatibility</h2>
+      <span class="tag" style="background:var(--openrouter-dim);color:var(--openrouter)">Quick Answer</span>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">✓</span>
+      <div><strong>They are compatible.</strong> <code>--model-class openrouter</code> tells Yudai to use the OpenRouter proxy. <code>YUDAI_EVMBENCH_MODEL="anthropic/claude-sonnet-4-6"</code> is the <em>OpenRouter model ID</em> — OpenRouter's routing string for Claude Sonnet, not a direct Anthropic API call. OpenRouter forwards the request to Anthropic on your behalf.</div>
+    </div>
+
+    <div class="grid-2 mt-16">
+      <div class="card">
+        <div class="card-title" style="color:var(--openrouter)">What each piece does</div>
+        <ul class="step-list">
+          <li>
+            <span class="step-num" style="background:var(--openrouter-dim)">1</span>
+            <div class="step-content"><code>--model-class openrouter</code> → selects <code>OpenRouterModel</code> in <code>minisweagent/models/</code>. Sets base URL to <code>openrouter.ai/api/v1</code>.</div>
+          </li>
+          <li>
+            <span class="step-num" style="background:var(--openrouter-dim)">2</span>
+            <div class="step-content"><code>YUDAI_EVMBENCH_MODEL</code> → passed as the model name to the LiteLLM call. OpenRouter interprets <code>anthropic/claude-sonnet-4-6</code> as "route to Anthropic Claude Sonnet 4.6".</div>
+          </li>
+          <li>
+            <span class="step-num" style="background:var(--openrouter-dim)">3</span>
+            <div class="step-content"><code>OPENROUTER_API_KEY</code> is required in env. This is the only key needed — OpenRouter handles Anthropic billing internally.</div>
+          </li>
+          <li>
+            <span class="step-num" style="background:var(--openrouter-dim)">4</span>
+            <div class="step-content">In <code>evmbench_agent.py:75</code>, <code>MSWEA_MODEL_CLASS</code> env var overrides the <code>model_class</code> in config. Set <code>MSWEA_MODEL_CLASS=openrouter</code> OR pass <code>--model-class openrouter</code> to <code>evmbench.py</code>.</div>
+          </li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--openrouter)">Full env var set for a run</div>
+        <div class="code-block"><span class="code-comment"># All you need for a Pipeline A detect run</span>
+<span class="code-kw">export</span> OPENROUTER_API_KEY=<span class="code-str">"sk-or-..."</span>
+<span class="code-kw">export</span> YUDAI_EVMBENCH_MODEL=<span class="code-str">"anthropic/claude-sonnet-4-6"</span>
+<span class="code-kw">export</span> MSWEA_MODEL_CLASS=<span class="code-str">"openrouter"</span>
+<span class="code-kw">export</span> YUDAI_EVMBENCH_STEP_LIMIT=<span class="code-str">"80"</span>
+<span class="code-kw">export</span> YUDAI_EVMBENCH_COST_LIMIT=<span class="code-str">"5.0"</span>
+
+<span class="code-comment"># Then invoke host orchestrator:</span>
+uv run python -m minisweagent.run.extra.evmbench \
+  --mode detect \
+  --audit 2024-08-phi \
+  --model <span class="code-str">"anthropic/claude-sonnet-4-6"</span> \
+  --model-class openrouter \
+  --hint-level none \
+  --concurrency 1</div>
+        <div class="alert alert-warn" style="margin-top:10px">
+          <span class="alert-icon">⚠</span>
+          <div><strong>Blocker first:</strong> The EVMBench submodule must be initialized and the agent IDs fixed (Phase 0) before this command does anything meaningful.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ══ SECTION 1: THE BLOCKER ══ -->
+  <div class="section fade-up">
+    <div class="section-label">
+      <div class="dot" style="background:var(--warn)"></div>
+      <h2>Phase 0 — Fix the Blocker First</h2>
+      <span class="badge badge-warn">Required</span>
+    </div>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">⛔</span>
+      <div><strong>Current state:</strong> <code>evmBench-frontier-evals/</code> submodule is empty. Agent IDs in submodule (<code>yudai-default</code>, <code>yudai-opus</code>, <code>yudai-haiku</code>) do not match what <code>evmbench.py</code> requests (<code>yudai-detect</code>, <code>yudai-patch</code>, <code>yudai-exploit</code>). Nothing in Pipeline A works until this is fixed.</div>
+    </div>
+
+    <div class="gap-block mt-16">
+      <div class="hook-row" style="border-left-color:var(--warn)">
+        <span class="hook-label">Step 1</span>
+        <div>Initialize submodule: <code>git submodule update --init --recursive</code></div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--warn)">
+        <span class="hook-label">Step 2</span>
+        <div>Edit <code>evmBench-frontier-evals/project/evmbench/evmbench/agents/yudai/config.yaml</code> — add entries for <code>yudai-detect</code>, <code>yudai-patch</code>, <code>yudai-exploit</code> each calling the <code>evmbench_agent.py</code> entrypoint with the correct <code>--mode</code>.</div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--warn)">
+        <span class="hook-label">Step 3</span>
+        <div>Edit <code>evmBench-frontier-evals/project/evmbench/evmbench/agents/yudai/start.sh</code> — wire each agent ID to call <code>python -m minisweagent.run.extra.evmbench_agent --mode &lt;detect|patch|exploit&gt;</code>.</div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--warn)">
+        <span class="hook-label">Step 4</span>
+        <div>Add test: assert that every key in <code>MODE_TO_AGENT_ID</code> dict in <code>src/minisweagent/run/extra/evmbench.py:20</code> is present in the submodule config. This prevents future drift.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ══ SECTION 2: TTS INTEGRATION MAP ══ -->
+  <div class="section fade-up">
+    <div class="section-label">
+      <div class="dot" style="background:var(--tts)"></div>
+      <h2>TTS Integration Points</h2>
+      <span class="tag" style="background:var(--tts-dim);color:var(--tts)">6 Phases</span>
+    </div>
+
+    <p class="text-dim" style="margin-bottom:20px">Each phase maps to a specific file and a specific insertion point. The goal is always to sit <em>above</em> the existing <code>InteractiveAgent.run()</code> call — not modify the agent internals.</p>
+
+    <!-- Phase 0 already covered above -->
+
+    <!-- Phase 1 Baseline -->
+    <div class="phase-card fade-up" style="--accent:var(--detect); margin-bottom:14px;">
+      <div class="phase-num">Phase 1</div>
+      <div class="phase-title">Reproduce a Clean Baseline</div>
+      <span class="phase-status" style="background:var(--detect-dim);color:var(--detect)">No code changes needed</span>
+      <ul class="step-list">
+        <li>
+          <span class="step-num">1</span>
+          <div class="step-content">
+            Run single-pass detect on one audit with <code>--hint-level none --concurrency 1</code>.
+            <span class="step-file">Entry: src/minisweagent/run/extra/evmbench.py (host orchestrator)</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div class="step-content">
+            Archive trajectory from <code>/home/logs/yudai-minisweagent.traj.json</code> and <code>submission/audit.md</code>.
+            <span class="step-file">Written by: src/minisweagent/run/extra/evmbench_agent.py:119 → save_traj()</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div class="step-content">Record: recall (findings count), cost ($), steps used. This is your ablation baseline.</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Phase 2 Detect TTS -->
+    <div class="phase-card fade-up" style="--accent:var(--detect); margin-bottom:14px;">
+      <div class="phase-num">Phase 2 — Start Here for TTS</div>
+      <div class="phase-title">Multi-Branch Detect Orchestrator</div>
+      <span class="phase-status" style="background:var(--detect-dim);color:var(--detect)">New file: tts_detect.py</span>
+
+      <div class="alert alert-tts">
+        <span class="alert-icon">🎯</span>
+        <div><strong>Insertion point:</strong> Wrap the <code>agent.run(task)</code> call at <code>evmbench_agent.py:109</code>. Do NOT modify <code>DefaultAgent</code> or <code>InteractiveAgent</code>. Create a new module that calls <code>evmbench_agent.main()</code> multiple times with different seeds/starting points, then merges the <code>submission/audit.md</code> outputs.</div>
+      </div>
+
+      <ul class="step-list mt-8">
+        <li>
+          <span class="step-num">1</span>
+          <div class="step-content">
+            Create <code>src/minisweagent/run/extra/tts_detect.py</code>. Function: <code>run_branched_detect(mode, n_branches=3, audit_id) → merged_audit_md</code>
+            <span class="step-file">Calls: evmbench_agent.main() × n_branches with different MODE_SUPPLEMENTS seeds</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div class="step-content">
+            Vary starting point per branch by appending to <code>MODE_SUPPLEMENTS["detect"]</code>:
+            <div class="code-block" style="margin-top:6px"><span class="code-comment"># Branch 0: start from entry contracts</span>
+<span class="code-comment"># Branch 1: start from external call surfaces</span>
+<span class="code-comment"># Branch 2: start from token transfer flows</span>
+branch_seeds = [
+    <span class="code-str">"Start your analysis from the main entry contract."</span>,
+    <span class="code-str">"Start from all external calls and cross-contract interactions."</span>,
+    <span class="code-str">"Start from all token transfer and approval paths."</span>,
+]</div>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div class="step-content">
+            Merge: deduplicate findings by function/line reference. Write merged <code>submission/audit.md</code>.
+            <span class="step-file">Simple merge: concat + dedup by heading. Better: embedding similarity on finding text.</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">4</span>
+          <div class="step-content">
+            Difficulty routing (Snell-style): before branching, scan contract size + external call count. If small+simple → 1 branch. Medium → 2. Complex → 3–5.
+            <span class="step-file">Input: audit/ contract files. Tool: src/minisweagent/run/extra/inspector.py (already exists)</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Phase 3 Evaluate -->
+    <div class="phase-card fade-up" style="--accent:var(--tts); margin-bottom:14px;">
+      <div class="phase-num">Phase 3</div>
+      <div class="phase-title">Evaluate Detect Ablations</div>
+      <span class="phase-status" style="background:var(--tts-dim);color:var(--tts)">Measure before expanding</span>
+      <ul class="step-list">
+        <li>
+          <span class="step-num">A</span>
+          <div class="step-content">Single-pass baseline (Phase 1 output)</div>
+        </li>
+        <li>
+          <span class="step-num">B</span>
+          <div class="step-content">Difficulty routing only (still single branch but model selected by difficulty score)</div>
+        </li>
+        <li>
+          <span class="step-num">C</span>
+          <div class="step-content">3-branch detect only (no routing)</div>
+        </li>
+        <li>
+          <span class="step-num">D</span>
+          <div class="step-content">Routing + 3-branch detect combined</div>
+        </li>
+      </ul>
+      <div class="alert alert-info" style="margin-top:12px">
+        <span class="alert-icon">📊</span>
+        <div>Keep total token budget equal across conditions. Metrics: recall (EVMBench grader), findings count, duplicate rate, cost, wall time.</div>
+      </div>
+    </div>
+
+    <!-- Phase 4 Exploit -->
+    <div class="phase-card fade-up" style="--accent:var(--exploit); margin-bottom:14px;">
+      <div class="phase-num">Phase 4</div>
+      <div class="phase-title">Execution-Guided Exploit TTS</div>
+      <span class="phase-status" style="background:var(--exploit-dim);color:var(--exploit)">Leverage ExploitFoundryEnvironmentV3</span>
+
+      <div class="alert alert-tts" style="margin-top:4px">
+        <span class="alert-icon">⚡</span>
+        <div><strong>Key leverage:</strong> <code>ExploitFoundryEnvironmentV3.execute()</code> in <code>exploit_environment_v3.py</code> already stores <code>self.execution_traces</code> after every forge command. This is your verifier signal — no new tooling needed.</div>
+      </div>
+
+      <ul class="step-list mt-8">
+        <li>
+          <span class="step-num">1</span>
+          <div class="step-content">
+            For EVMBench exploit mode: parallel candidate strategies. Create 3 <code>Strategy.sol</code> variants (different attack vectors), run each via <code>forge script</code>.
+            <span class="step-file">Hook into: benchmark_episode.py — after workspace setup, before agent.run()</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div class="step-content">
+            Execution-guided pruning: after each branch step, check <code>execution_traces[-1].success</code> and balance delta via <code>get_balance_ether()</code>. Kill branches with no balance change after N attempts.
+            <span class="step-file">exploit_environment_v3.py:execute() → execution_traces → format_trace_for_llm()</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div class="step-content">
+            Reuse <code>FailureAwareAgent</code> from <code>benchmark_episode.py</code>: 6 unrecoverable failure patterns already defined. Plug this in as the branch agent instead of plain <code>InteractiveAgent</code>.
+          </div>
+        </li>
+        <li>
+          <span class="step-num">4</span>
+          <div class="step-content">
+            Difficulty routing for exploit: single-step (simple transfer) vs multi-step (flash loan + swap) vs multi-contract. Route to 1/2/3 parallel candidates respectively.
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Phase 5 Patch -->
+    <div class="phase-card fade-up" style="--accent:var(--patch); margin-bottom:14px;">
+      <div class="phase-num">Phase 5</div>
+      <div class="phase-title">Test-Driven Patch TTS</div>
+      <span class="phase-status" style="background:var(--patch-dim);color:var(--patch)">forge test as verifier</span>
+      <ul class="step-list">
+        <li>
+          <span class="step-num">1</span>
+          <div class="step-content">
+            Generate N patch candidates from detect findings. Each candidate is a git diff applied to audit/ contracts.
+            <span class="step-file">Insertion: evmbench_agent.py — after agent.run(), loop over submission/agent.diff variants</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div class="step-content">
+            Verifier: run <code>forge test</code> in LocalEnvironment. Keep only patches where tests pass AND an exploit script fails (blocked).
+            <span class="step-file">Uses LocalEnvironment.execute("forge test") — already available in container</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div class="step-content">
+            Fallback: if all candidates fail, re-prompt with test output. This is the S*-style execution feedback loop.
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Phase 6 Adaptive -->
+    <div class="phase-card fade-up" style="--accent:var(--tts); margin-bottom:14px;">
+      <div class="phase-num">Phase 6</div>
+      <div class="phase-title">Adaptive Control (Later)</div>
+      <span class="phase-status" style="background:var(--surface2);color:var(--text-dim)">After phases 2–5 are measured</span>
+      <ul class="step-list">
+        <li><span class="step-num">↺</span><div class="step-content">Branch on stall: if agent repeats same command 3× → spawn fresh branch with different hint</div></li>
+        <li><span class="step-num">↺</span><div class="step-content">Budget reallocation: if branch N has 0 balance change after 10 steps, reallocate its remaining budget to surviving branches</div></li>
+        <li><span class="step-num">↺</span><div class="step-content">Self-critique trigger: after failed verification, inject a structured critique message before next query</div></li>
+        <li><span class="step-num">↺</span><div class="step-content">True ACTS (logprob-based): skip until a model backend exposes token-level signals</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ══ SECTION 3: cache/sources ══ -->
+  <div class="section fade-up">
+    <div class="section-label">
+      <div class="dot" style="background:var(--cache)"></div>
+      <h2>cache/sources/ — 7 Pre-Fetched Contracts</h2>
+      <span class="tag" style="background:var(--cache-dim);color:var(--cache)">Both Pipelines</span>
+    </div>
+
+    <div class="alert alert-cache">
+      <span class="alert-icon">📦</span>
+      <div>These are Etherscan-verified Solidity source files for mainnet contracts, fetched by <code>scripts/fetch_contract_source.py</code> and cached as JSON. The format matches what <code>run_benchmark_exploit_v3.py</code> loads via <code>enrich_case_with_source()</code>.</div>
+    </div>
+
+    <!-- Contract table -->
+    <div class="table-wrap mt-16">
+      <table>
+        <thead>
+          <tr>
+            <th>Contract</th>
+            <th>Address (mainnet)</th>
+            <th>Source Size</th>
+            <th>Known Hack</th>
+            <th>Usage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>BancorNetwork</strong></td>
+            <td><code>0x5f5805...</code></td>
+            <td>~57K chars</td>
+            <td>Bancor 2020 reentrancy</td>
+            <td><span class="badge badge-cache">Pipeline B</span></td>
+          </tr>
+          <tr>
+            <td><strong>MoneyMarket</strong></td>
+            <td><code>0x0eee3e...</code></td>
+            <td>~130K chars</td>
+            <td>Lendf.me flash loan</td>
+            <td><span class="badge badge-cache">Pipeline B</span></td>
+          </tr>
+          <tr>
+            <td><strong>DVM</strong></td>
+            <td><code>0x051ebd...</code></td>
+            <td>~48K chars</td>
+            <td>DODO flash loan</td>
+            <td><span class="badge badge-cache">Pipeline B</span></td>
+          </tr>
+          <tr>
+            <td><strong>ControllerV4</strong></td>
+            <td><code>0x684725...</code></td>
+            <td>~345K chars</td>
+            <td>Pickle Finance strategy</td>
+            <td><span class="badge badge-cache">Pipeline B</span> <span class="badge badge-tts">Few-shot</span></td>
+          </tr>
+          <tr>
+            <td><strong>SushiMaker</strong></td>
+            <td><code>0xe11fc0...</code></td>
+            <td>~147K chars</td>
+            <td>Sushi/Badger/DIGG</td>
+            <td><span class="badge badge-cache">Pipeline B</span> <span class="badge badge-tts">Few-shot</span></td>
+          </tr>
+          <tr>
+            <td><strong>VaultProxy</strong></td>
+            <td><code>0xf0358e...</code></td>
+            <td>~7K chars</td>
+            <td>Harvest Finance strategy</td>
+            <td><span class="badge badge-cache">Pipeline B</span></td>
+          </tr>
+          <tr>
+            <td><strong>JAY</strong></td>
+            <td><code>0xf2919d...</code></td>
+            <td>~42K chars</td>
+            <td>Generic MEV target</td>
+            <td><span class="badge badge-cache">Pipeline B</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Usage paths -->
+    <div class="grid-2 mt-16">
+      <div class="card">
+        <div class="card-title" style="color:var(--cache)">Usage in Pipeline B (run_benchmark_exploit_v3.py)</div>
+        <ul class="step-list">
+          <li>
+            <span class="step-num">1</span>
+            <div class="step-content">
+              <strong>Bypass Etherscan rate limits.</strong> The script at <code>scripts/run_benchmark_exploit_v3.py:469</code> calls <code>enrich_case_with_source(case, cache_dir=cache_dir)</code>. If the address JSON already exists in <code>cache/sources/</code>, it skips the API call entirely.
+              <div class="code-block" style="margin-top:6px"><span class="code-comment"># Already works! Just ensure addresses match:</span>
+python scripts/run_benchmark_exploit_v3.py \
+  --cache-dir cache/sources \
+  --cases bancor</div>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div class="step-content">
+              The <code>case.source_code</code> is written to <code>workspace/src/Target.sol</code> at episode line 497. The agent sees it directly in the container filesystem.
+              <span class="step-file">benchmark_episode.py:497 → workspace/src/Target.sol</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div class="step-content">
+              <strong>Speed up CI:</strong> commit <code>cache/sources/*.json</code> so benchmark runs never need <code>ETHERSCAN_API_KEY</code> for these 7 contracts.
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="color:var(--tts)">Usage as TTS Training Signal / Few-Shot</div>
+        <ul class="step-list">
+          <li>
+            <span class="step-num">A</span>
+            <div class="step-content">
+              <strong>Few-shot exploit examples.</strong> Pickle (ControllerV4) and Sushi (SushiMaker) are well-known hacks with documented attack paths. Include a condensed version in the system prompt to bootstrap the agent's exploit strategy knowledge.
+              <span class="step-file">Injection point: evmbench_agent.py:28 → MODE_SUPPLEMENTS["exploit"] or config/extra/evmbench.yaml system_template</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">B</span>
+            <div class="step-content">
+              <strong>Difficulty calibration.</strong> Use source size and call graph complexity from these known contracts to calibrate the difficulty scorer. Pickle (345K chars, multi-contract) = hard; JAY (42K, standalone) = easy.
+              <span class="step-file">Feeds into: Phase 2 difficulty routing logic in tts_detect.py</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">C</span>
+            <div class="step-content">
+              <strong>Strategy template improvement.</strong> Extract common exploit patterns (reentrancy entry point, flash loan callback, price manipulation sequence) from these sources to enrich <code>exploit_generation/templates/Strategy.sol.tmpl</code>.
+            </div>
+          </li>
+          <li>
+            <span class="step-num">D</span>
+            <div class="step-content">
+              <strong>Static analysis seed for detect mode.</strong> Run a quick grep over the source for known vulnerability signatures (<code>transfer</code> before state update, unchecked return values, etc.) and prepend findings as a hint to the detect branch.
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ══ SECTION 4: Full Decision Flow ══ -->
+  <div class="section fade-up">
+    <div class="section-label">
+      <div class="dot" style="background:var(--tts)"></div>
+      <h2>TTS Decision Flow — Where Code Lives</h2>
+    </div>
+
+    <div class="mermaid-wrap">
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zin">+</button>
+        <button class="zoom-btn" id="zout">−</button>
+        <button class="zoom-btn" id="zreset" title="Reset">↺</button>
+      </div>
+      <div class="mermaid-inner" id="minner">
+        <div class="mermaid">
+%%{init: {
+  "theme": "base",
+  "look": "classic",
+  "themeVariables": {
+    "background": "#13151f",
+    "primaryColor": "#1c1f2e",
+    "primaryTextColor": "#e8eaf6",
+    "primaryBorderColor": "#3d4175",
+    "lineColor": "#7b82b0",
+    "secondaryColor": "#252840",
+    "tertiaryColor": "#1c1f2e",
+    "fontFamily": "JetBrains Mono, monospace",
+    "fontSize": "14px"
+  }
+}}%%
+flowchart TD
+    A([Start: evmbench.py<br/>host orchestrator]) --> B{Phase 0 done?}
+    B -->|No| FIX[Fix submodule agent IDs<br/>agents/yudai/config.yaml<br/>agents/yudai/start.sh]
+    FIX --> B
+    B -->|Yes| C[Build EVMBench images<br/>sync_evmbench_runtime]
+    C --> D{mode?}
+
+    D -->|detect| DET[tts_detect.py<br/>NEW FILE]
+    D -->|exploit| EXP[tts_exploit.py<br/>NEW FILE]
+    D -->|patch| PAT[tts_patch.py<br/>NEW FILE]
+
+    DET --> DIFF[Difficulty scorer<br/>contract size + call graph<br/>→ n_branches 1-5]
+    DIFF --> DBRANCH[N × evmbench_agent.main<br/>different MODE_SUPPLEMENTS seeds]
+    DBRANCH --> MERGE[Merge audit.md outputs<br/>dedup by finding reference]
+    MERGE --> SUBMIT_D[submission/audit.md]
+
+    EXP --> EPAR[Parallel Strategy.sol variants<br/>different attack vectors]
+    EPAR --> EVERIFY[ExploitFoundryEnvironmentV3<br/>execution_traces + get_balance_ether]
+    EVERIFY --> EPRUNE{profit > 0?}
+    EPRUNE -->|Yes| SUBMIT_E[Keep branch<br/>txs.json auto-captured]
+    EPRUNE -->|No| EKILL[Kill branch<br/>reallocate budget]
+    EKILL --> EPAR
+
+    PAT --> PGEN[N patch candidates<br/>different vulnerability hypotheses]
+    PGEN --> PTEST[forge test in LocalEnvironment]
+    PTEST --> PCHECK{tests pass AND<br/>exploit blocked?}
+    PCHECK -->|Yes| SUBMIT_P[submission/agent.diff]
+    PCHECK -->|No| PREFEED[Re-prompt with test output<br/>S*-style feedback]
+    PREFEED --> PGEN
+
+    classDef newfile fill:#3d1d6b,stroke:#a855f7,color:#e8eaf6
+    classDef existing fill:#1c1f2e,stroke:#3d4175,color:#e8eaf6
+    classDef blocker fill:#3d1020,stroke:#f43f5e,color:#f43f5e
+    classDef submit fill:#1a2e1a,stroke:#22c55e,color:#22c55e
+    classDef decision fill:#2a2414,stroke:#eab308,color:#eab308
+
+    class DET,EXP,PAT newfile
+    class C,DBRANCH,EVERIFY,PTEST existing
+    class FIX,B blocker
+    class SUBMIT_D,SUBMIT_E,SUBMIT_P submit
+    class D,EPRUNE,PCHECK decision
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ══ SECTION 5: File Map ══ -->
+  <div class="section fade-up">
+    <div class="section-label">
+      <div class="dot" style="background:var(--detect)"></div>
+      <h2>File Map — What to Create vs What Already Exists</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Status</th>
+            <th>Purpose</th>
+            <th>TTS Phase</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>src/minisweagent/run/extra/evmbench.py</code></td>
+            <td><span class="badge badge-ok">Exists</span></td>
+            <td>Host orchestrator. Calls EVMBench entrypoint per audit.</td>
+            <td><span class="badge badge-detect">0</span></td>
+          </tr>
+          <tr>
+            <td><code>src/minisweagent/run/extra/evmbench_agent.py</code></td>
+            <td><span class="badge badge-ok">Exists</span></td>
+            <td>Container entrypoint. Runs <code>InteractiveAgent</code> for one mode.</td>
+            <td><span class="badge badge-detect">1</span></td>
+          </tr>
+          <tr>
+            <td><code>src/minisweagent/run/extra/inspector.py</code></td>
+            <td><span class="badge badge-ok">Exists</span></td>
+            <td>Contract inspector (already exists). Extend for difficulty scoring.</td>
+            <td><span class="badge badge-tts">2</span></td>
+          </tr>
+          <tr>
+            <td><code>src/minisweagent/run/extra/tts_detect.py</code></td>
+            <td><span class="badge badge-warn">Create</span></td>
+            <td>Multi-branch detect orchestrator. Difficulty routing + branch merge.</td>
+            <td><span class="badge badge-tts">2</span></td>
+          </tr>
+          <tr>
+            <td><code>src/minisweagent/run/extra/tts_exploit.py</code></td>
+            <td><span class="badge badge-warn">Create</span></td>
+            <td>Parallel Strategy.sol candidates + execution-guided pruning.</td>
+            <td><span class="badge badge-tts">4</span></td>
+          </tr>
+          <tr>
+            <td><code>src/minisweagent/run/extra/tts_patch.py</code></td>
+            <td><span class="badge badge-warn">Create</span></td>
+            <td>Patch candidate generation + forge test verification loop.</td>
+            <td><span class="badge badge-tts">5</span></td>
+          </tr>
+          <tr>
+            <td><code>exploit_generation/benchmark_episode.py</code></td>
+            <td><span class="badge badge-ok">Exists</span></td>
+            <td><code>FailureAwareAgent</code> (reuse for branch pruning), 7-step setup.</td>
+            <td><span class="badge badge-tts">4</span></td>
+          </tr>
+          <tr>
+            <td><code>src/minisweagent/environments/exploit_environment_v3.py</code></td>
+            <td><span class="badge badge-ok">Exists</span></td>
+            <td><code>execution_traces</code> + <code>get_balance_ether()</code> — verifier signals.</td>
+            <td><span class="badge badge-tts">4</span></td>
+          </tr>
+          <tr>
+            <td><code>evmBench-frontier-evals/.../agents/yudai/config.yaml</code></td>
+            <td><span class="badge badge-warn">Edit</span></td>
+            <td>Add <code>yudai-detect</code>, <code>yudai-patch</code>, <code>yudai-exploit</code> entries.</td>
+            <td><span class="badge badge-detect">0</span></td>
+          </tr>
+          <tr>
+            <td><code>cache/sources/*.json</code></td>
+            <td><span class="badge badge-ok">Exists (7)</span></td>
+            <td>Pre-fetched Etherscan sources. Use as Pipeline B source bypass + few-shot hints.</td>
+            <td>All</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ══ SECTION 6: Ordered Action List ══ -->
+  <div class="section fade-up">
+    <div class="section-label">
+      <div class="dot" style="background:var(--patch)"></div>
+      <h2>Recommended Order — What to Do Right Now</h2>
+    </div>
+    <div class="gap-block">
+      <div class="hook-row" style="border-left-color:var(--warn)">
+        <span class="hook-label" style="min-width:56px">NOW #1</span>
+        <div><code>git submodule update --init --recursive</code> — unblock everything</div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--warn)">
+        <span class="hook-label" style="min-width:56px">NOW #2</span>
+        <div>Edit submodule <code>agents/yudai/config.yaml</code> + <code>start.sh</code> to add <code>yudai-detect/patch/exploit</code> entries</div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--detect)">
+        <span class="hook-label" style="min-width:56px">NEXT #3</span>
+        <div>Run one detect baseline: <code>MSWEA_MODEL_CLASS=openrouter YUDAI_EVMBENCH_MODEL=anthropic/claude-sonnet-4-6 uv run python -m minisweagent.run.extra.evmbench --mode detect --audit 2024-08-phi --concurrency 1</code></div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--detect)">
+        <span class="hook-label" style="min-width:56px">NEXT #4</span>
+        <div>Archive <code>submission/audit.md</code> + trajectory as baseline. Record cost and finding count.</div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--tts)">
+        <span class="hook-label" style="min-width:56px">TTS #5</span>
+        <div>Create <code>tts_detect.py</code> with 3-branch detect. Test on same audit. Compare finding count vs baseline at same token budget.</div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--cache)">
+        <span class="hook-label" style="min-width:56px">CACHE #6</span>
+        <div>For Pipeline B: ensure <code>benchmark.csv</code> addresses for Bancor, Pickle, etc. match <code>cache/sources/</code> filenames. Run <code>scripts/run_benchmark_exploit_v3.py --cache-dir cache/sources</code> — no Etherscan key needed.</div>
+      </div>
+      <div class="hook-row" style="border-left-color:var(--exploit)">
+        <span class="hook-label" style="min-width:56px">LATER #7</span>
+        <div>Only after detect TTS is measured: implement <code>tts_exploit.py</code> with parallel Strategy variants + execution-guided pruning via <code>execution_traces</code>.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.page -->
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      background: '#13151f',
+      primaryColor: '#1c1f2e',
+      primaryTextColor: '#e8eaf6',
+      primaryBorderColor: '#3d4175',
+      lineColor: '#7b82b0',
+      secondaryColor: '#252840',
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: '14px'
+    }
+  });
+
+  // Zoom + pan
+  const inner = document.getElementById('minner');
+  let scale = 1, ox = 0, oy = 0, dragging = false, startX, startY, startOx, startOy;
+
+  function applyTransform() {
+    const svg = inner.querySelector('svg');
+    if (svg) svg.style.transform = `translate(${ox}px,${oy}px) scale(${scale})`;
+  }
+  document.getElementById('zin').onclick  = () => { scale = Math.min(scale * 1.25, 5); applyTransform(); };
+  document.getElementById('zout').onclick = () => { scale = Math.max(scale / 1.25, 0.3); applyTransform(); };
+  document.getElementById('zreset').onclick = () => { scale=1; ox=0; oy=0; applyTransform(); };
+
+  inner.addEventListener('wheel', e => {
+    e.preventDefault();
+    scale = Math.min(Math.max(scale * (e.deltaY < 0 ? 1.1 : 0.9), 0.3), 5);
+    applyTransform();
+  }, { passive: false });
+
+  inner.addEventListener('mousedown', e => {
+    dragging = true; startX = e.clientX; startY = e.clientY;
+    startOx = ox; startOy = oy; inner.classList.add('panning');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    ox = startOx + e.clientX - startX;
+    oy = startOy + e.clientY - startY;
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; inner.classList.remove('panning'); });
+</script>
+</body>
+</html>
