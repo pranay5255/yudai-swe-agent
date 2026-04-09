@@ -19,8 +19,16 @@ def parse_text_actions(
     action_regex: str,
     format_error_template: str,
     template_vars: dict | None = None,
+    planner_action_regex: str | None = None,
+    planner_mode: bool = False,
 ) -> list[dict]:
     content = get_content_string(message)
+
+    if planner_mode and planner_action_regex:
+        actions = re.findall(planner_action_regex, content, re.DOTALL)
+        if actions:
+            return [{"tool": "bash", "command": cmd.strip(), "action": cmd.strip()} for cmd in actions if cmd.strip()]
+
     actions = re.findall(action_regex, content, re.DOTALL)
     if len(actions) != 1:
         raise FormatError(
@@ -47,4 +55,3 @@ def format_text_observation_messages(
         content = Template(observation_template, undefined=StrictUndefined).render(output=output, **template_vars)
         messages.append({"role": "user", "content": content})
     return messages
-
