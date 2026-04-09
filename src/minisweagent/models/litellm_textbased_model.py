@@ -16,6 +16,8 @@ class LitellmTextBasedModel(LitellmModel):
         super().__init__(config_class=config_class, **kwargs)
 
     def query(self, messages: list[dict], tools: list[dict] | None = None, **kwargs) -> dict:
+        planner_mode = kwargs.pop("planner_mode", False)
+        planner_action_regex = kwargs.pop("planner_action_regex", None)
         response = self._query(self._prepare_messages_for_api(messages), **kwargs)
         content = response.choices[0].message.content or ""  # type: ignore[index]
         cost_info = self._calculate_cost(response)
@@ -28,6 +30,8 @@ class LitellmTextBasedModel(LitellmModel):
                     action_regex=self.config.action_regex,
                     format_error_template=self.config.format_error_template,
                     template_vars=self.config.model_dump(),
+                    planner_action_regex=planner_action_regex,
+                    planner_mode=planner_mode,
                 )
             except FormatError as e:
                 extra = {"response": response.model_dump(), "timestamp": time.time()}
