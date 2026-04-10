@@ -1,4 +1,4 @@
-"""Container entrypoint for running mini-swe-agent inside EVMBench."""
+"""Container entrypoint for running the default mini-SWE-agent inside EVMBench."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Literal
 import typer
 import yaml
 
-from minisweagent.agents.interactive import InteractiveAgent
+from minisweagent.agents.default import DefaultAgent
 from minisweagent.config import builtin_config_dir, get_config_path
 from minisweagent.environments.local import LocalEnvironment
 from minisweagent.models import get_model
@@ -20,7 +20,7 @@ from minisweagent.utils.log import logger
 app = typer.Typer(add_completion=False)
 
 EVMBENCHMode = Literal["detect", "patch", "exploit"]
-DEFAULT_CONFIG = builtin_config_dir / "extra" / "evmbench.yaml"
+DEFAULT_CONFIG = builtin_config_dir / "default.yaml"
 DEFAULT_INSTRUCTIONS = Path("/home/agent/AGENTS.md")
 DEFAULT_OUTPUT = Path("/home/logs/yudai-minisweagent.traj.json")
 
@@ -58,6 +58,23 @@ def build_evmbench_task(mode: EVMBENCHMode, instructions_text: str) -> str:
     )
 
 
+def infer_mode_from_instructions(instructions_text: str) -> EVMBENCHMode:
+    normalized = instructions_text.lower()
+    if "goal is to exploit smart contracts on a blockchain" in normalized:
+        return "exploit"
+    if "goal is to audit these smart contracts and fix vulnerabilities" in normalized:
+        return "patch"
+    return "detect"
+
+
+def _first_env(*names: str) -> str | None:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return None
+
+
 def _apply_runtime_overrides(config: dict) -> dict:
     agent_config = config.setdefault("agent", {})
     env_config = config.setdefault("environment", {})
@@ -65,14 +82,11 @@ def _apply_runtime_overrides(config: dict) -> dict:
 
     env_config.setdefault("cwd", os.getenv("AGENT_DIR", "/home/agent"))
 
-    agent_config["mode"] = "yolo"
-    agent_config["confirm_exit"] = False
-
-    if (step_limit := os.getenv("YUDAI_EVMBENCH_STEP_LIMIT")):
+    if (step_limit := _first_env("YUDAI_EVMBENCH_STEP_LIMIT", "STEP_LIMIT")):
         agent_config["step_limit"] = int(step_limit)
-    if (cost_limit := os.getenv("YUDAI_EVMBENCH_COST_LIMIT")):
+    if (cost_limit := _first_env("YUDAI_EVMBENCH_COST_LIMIT", "COST_LIMIT")):
         agent_config["cost_limit"] = float(cost_limit)
-    if (model_class := os.getenv("MSWEA_MODEL_CLASS")):
+    if (model_class := _first_env("YUDAI_EVMBENCH_MODEL_CLASS", "MSWEA_MODEL_CLASS")):
         model_config["model_class"] = model_class
 
     model_config.setdefault("cost_tracking", "ignore_errors")
@@ -81,7 +95,7 @@ def _apply_runtime_overrides(config: dict) -> dict:
 
 @app.command()
 def main(
-    mode: EVMBENCHMode = typer.Option(..., "--mode"),
+    mode: EVMBENCHMode | None = typer.Option(None, "--mode"),
     instructions_file: Path = typer.Option(DEFAULT_INSTRUCTIONS, "--instructions-file"),
     config_path: Path = typer.Option(DEFAULT_CONFIG, "--config"),
     model_name: str | None = typer.Option(None, "--model"),
@@ -89,7 +103,8 @@ def main(
 ) -> None:
     resolved_config = get_config_path(config_path)
     instructions = instructions_file.read_text()
-    task = build_evmbench_task(mode, instructions)
+    resolved_mode = mode or infer_mode_from_instructions(instructions)
+    task = build_evmbench_task(resolved_mode, instructions)
 
     config = yaml.safe_load(resolved_config.read_text()) or {}
     config = _apply_runtime_overrides(config)
@@ -99,12 +114,18 @@ def main(
     agent = None
     exit_status = None
     result = None
-    extra_info = {"mode": mode, "instructions_file": str(instructions_file)}
+    extra_info = {
+        "mode": resolved_mode,
+        "instructions_file": str(instructions_file),
+        "config_path": str(resolved_config),
+        "agent_type": "default",
+    }
 
     try:
-        model = get_model(model_name or os.getenv("MSWEA_MODEL_NAME"), config.get("model", {}))
+        effective_model = model_name or _first_env("YUDAI_EVMBENCH_MODEL", "MODEL", "MSWEA_MODEL_NAME")
+        model = get_model(effective_model, config.get("model", {}))
         env = LocalEnvironment(**config.get("environment", {}))
-        agent = InteractiveAgent(model, env, **config.get("agent", {}))
+        agent = DefaultAgent(model, env, **config.get("agent", {}))
 
         exit_info = agent.run(task)
         exit_status = exit_info.get("exit_status")
