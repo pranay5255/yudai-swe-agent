@@ -383,7 +383,7 @@
           </li>
           <li>
             <span class="step-num" style="background:var(--openrouter-dim)">2</span>
-            <div class="step-content"><code>YUDAI_EVMBENCH_MODEL</code> → passed as the model name to the LiteLLM call. OpenRouter interprets <code>anthropic/claude-sonnet-4-6</code> as "route to Anthropic Claude Sonnet 4.6".</div>
+            <div class="step-content"><code>YUDAI_EVMBENCH_MODEL</code> → passed as the model name into <code>OpenRouterModel</code>. OpenRouter interprets <code>anthropic/claude-sonnet-4-6</code> as "route to Anthropic Claude Sonnet 4.6".</div>
           </li>
           <li>
             <span class="step-num" style="background:var(--openrouter-dim)">3</span>
@@ -391,7 +391,7 @@
           </li>
           <li>
             <span class="step-num" style="background:var(--openrouter-dim)">4</span>
-            <div class="step-content">In <code>evmbench_agent.py:75</code>, <code>MSWEA_MODEL_CLASS</code> env var overrides the <code>model_class</code> in config. Set <code>MSWEA_MODEL_CLASS=openrouter</code> OR pass <code>--model-class openrouter</code> to <code>evmbench.py</code>.</div>
+            <div class="step-content">Inside <code>evmbench_agent.py</code>, <code>YUDAI_EVMBENCH_MODEL_CLASS</code> is preferred and <code>MSWEA_MODEL_CLASS</code> is the fallback override. The container entrypoint uses <code>DefaultAgent</code> with <code>default.yaml</code>, not the older interactive wrapper.</div>
           </li>
         </ul>
       </div>
@@ -400,7 +400,7 @@
         <div class="code-block"><span class="code-comment"># All you need for a Pipeline A detect run</span>
 <span class="code-kw">export</span> OPENROUTER_API_KEY=<span class="code-str">"sk-or-..."</span>
 <span class="code-kw">export</span> YUDAI_EVMBENCH_MODEL=<span class="code-str">"anthropic/claude-sonnet-4-6"</span>
-<span class="code-kw">export</span> MSWEA_MODEL_CLASS=<span class="code-str">"openrouter"</span>
+<span class="code-kw">export</span> YUDAI_EVMBENCH_MODEL_CLASS=<span class="code-str">"openrouter"</span>
 <span class="code-kw">export</span> YUDAI_EVMBENCH_STEP_LIMIT=<span class="code-str">"80"</span>
 <span class="code-kw">export</span> YUDAI_EVMBENCH_COST_LIMIT=<span class="code-str">"5.0"</span>
 
@@ -414,7 +414,7 @@ uv run python -m minisweagent.run.extra.evmbench \
   --concurrency 1</div>
         <div class="alert alert-warn" style="margin-top:10px">
           <span class="alert-icon">⚠</span>
-          <div><strong>Blocker first:</strong> The EVMBench submodule must be initialized and the agent IDs fixed (Phase 0) before this command does anything meaningful.</div>
+          <div><strong>Constraint first:</strong> TTS should sit on top of the native EVMBench harness. Do not bypass <code>eval.py</code>, <code>task.py</code>, <code>audit.py</code>, or the built-in graders if you want benchmark-comparable results.</div>
         </div>
       </div>
     </div>
@@ -422,35 +422,106 @@ uv run python -m minisweagent.run.extra.evmbench \
 
   <hr>
 
-  <!-- ══ SECTION 1: THE BLOCKER ══ -->
+  <!-- ══ SECTION 1: Native Harness Contract ══ -->
   <div class="section fade-up">
     <div class="section-label">
       <div class="dot" style="background:var(--warn)"></div>
-      <h2>Phase 0 — Fix the Blocker First</h2>
+      <h2>Phase 0 — Native Harness Contract</h2>
       <span class="badge badge-warn">Required</span>
     </div>
 
     <div class="alert alert-warn">
       <span class="alert-icon">⛔</span>
-      <div><strong>Current state:</strong> <code>evmBench-frontier-evals/</code> submodule is empty. Agent IDs in submodule (<code>yudai-default</code>, <code>yudai-opus</code>, <code>yudai-haiku</code>) do not match what <code>evmbench.py</code> requests (<code>yudai-detect</code>, <code>yudai-patch</code>, <code>yudai-exploit</code>). Nothing in Pipeline A works until this is fixed.</div>
+      <div><strong>Current constraint:</strong> the shared Yudai adapter is now aligned, but EVMBench grading still depends on the native <code>eval.py → task.py → audit.py → grader</code> contract. TTS should wrap that contract, not replace it, or your runs stop being EVMBench runs.</div>
+    </div>
+
+    <div class="grid-3 mt-16">
+      <div class="card">
+        <div class="card-title" style="color:var(--detect)">eval.py</div>
+        <div class="text-dim">Creates the benchmark tasks. It picks audits from <code>audit</code> or <code>audit_split</code>, loads the audit config, filters vulnerabilities by mode, renders <code>AGENTS.md</code>, and creates one <code>EVMTask</code> per run.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--patch)">task.py</div>
+        <div class="text-dim">Owns solve-time setup and post-run extraction. It uploads the adapter <code>start.sh</code>, exploit helpers, and prompt file; then after the agent exits it materializes the graded artifact as <code>audit.md</code>, <code>agent.diff</code>, or <code>txs.json</code>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--exploit)">audit.py</div>
+        <div class="text-dim">Turns <code>audits/&lt;id&gt;/config.yaml</code> into the reusable spec: path mappings, invariant test command, vulnerability test command, exploit grade command, and mode-specific vulnerability filters.</div>
+      </div>
+    </div>
+
+    <div class="pipeline mt-16">
+      <div class="pipe-node">
+        <div class="pn-label">Host</div>
+        <div class="pn-name">eval.py</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pn-label">Solve Container</div>
+        <div class="pn-name">task.py setup</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pn-label">Adapter</div>
+        <div class="pn-name">start.sh + DefaultAgent</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pn-label">Post-Run</div>
+        <div class="pn-name">task.py grade</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pn-label">Fresh Container</div>
+        <div class="pn-name">Detect / Patch / Exploit Grader</div>
+      </div>
+    </div>
+
+    <div class="table-wrap mt-16">
+      <table>
+        <thead>
+          <tr>
+            <th>Mode</th>
+            <th>What the Adapter Does</th>
+            <th>What <code>task.py</code> Hands to the Grader</th>
+            <th>What the Grader Actually Checks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-detect">Detect</span></td>
+            <td>Writes <code>submission/audit.md</code> directly.</td>
+            <td><code>GraderContext.agent_output_path = submission/audit.md</code></td>
+            <td>LLM judge compares the audit report against each benchmark vulnerability description.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-patch">Patch</span></td>
+            <td>Edits the repo under <code>audit/</code>; it does not write the diff itself.</td>
+            <td><code>task.py</code> runs <code>audit.get_diff_command()</code> and extracts <code>submission/agent.diff</code></td>
+            <td>Applies the diff to a clean checkout, runs the invariant suite, then runs each vulnerability test.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-exploit">Exploit</span></td>
+            <td>Sends transactions against the task chain; it does not write <code>txs.json</code> itself.</td>
+            <td><code>task.py</code> restores <code>.ploit.toml</code> and runs <code>ploit txs</code> to create <code>submission/txs.json</code></td>
+            <td>Replays the txs on a fresh chain and executes <code>ploit grade --grade-script grade.sh</code>.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="gap-block mt-16">
-      <div class="hook-row" style="border-left-color:var(--warn)">
-        <span class="hook-label">Step 1</span>
-        <div>Initialize submodule: <code>git submodule update --init --recursive</code></div>
+      <div class="hook-row" style="border-left-color:var(--detect)">
+        <span class="hook-label">Detect</span>
+        <div><code>DetectGrader</code> returns <code>0</code> if <code>audit.md</code> is missing or empty. Otherwise it asks an LLM judge once per benchmark vulnerability whether the report describes the same bug. Score is the count of detected vulnerabilities; <code>detect_award</code> tracks weighted awards separately.</div>
       </div>
-      <div class="hook-row" style="border-left-color:var(--warn)">
-        <span class="hook-label">Step 2</span>
-        <div>Edit <code>evmBench-frontier-evals/project/evmbench/evmbench/agents/yudai/config.yaml</code> — add entries for <code>yudai-detect</code>, <code>yudai-patch</code>, <code>yudai-exploit</code> each calling the <code>evmbench_agent.py</code> entrypoint with the correct <code>--mode</code>.</div>
+      <div class="hook-row" style="border-left-color:var(--patch)">
+        <span class="hook-label">Patch</span>
+        <div><code>PatchGrader</code> reapplies <code>agent.diff</code> to a clean checkout, runs the pre-existing invariant suite first, and returns <code>0</code> if those tests regress beyond the audit's allowed threshold. Only then does it run the vulnerability tests and score each patch outcome.</div>
       </div>
-      <div class="hook-row" style="border-left-color:var(--warn)">
-        <span class="hook-label">Step 3</span>
-        <div>Edit <code>evmBench-frontier-evals/project/evmbench/evmbench/agents/yudai/start.sh</code> — wire each agent ID to call <code>python -m minisweagent.run.extra.evmbench_agent --mode &lt;detect|patch|exploit&gt;</code>.</div>
-      </div>
-      <div class="hook-row" style="border-left-color:var(--warn)">
-        <span class="hook-label">Step 4</span>
-        <div>Add test: assert that every key in <code>MODE_TO_AGENT_ID</code> dict in <code>src/minisweagent/run/extra/evmbench.py:20</code> is present in the submodule config. This prevents future drift.</div>
+      <div class="hook-row" style="border-left-color:var(--exploit)">
+        <span class="hook-label">Exploit</span>
+        <div><code>ExploitGrader</code> uploads the extracted <code>txs.json</code>, replays those transactions via <code>ploit</code> on a clean grading chain, runs <code>grade.sh</code>, and parses the resulting JSON <code>{score, max_score, ...}</code>. If setup, replay, or parsing fails, the exploit score falls back to <code>0</code>.</div>
       </div>
     </div>
   </div>
@@ -465,7 +536,7 @@ uv run python -m minisweagent.run.extra.evmbench \
       <span class="tag" style="background:var(--tts-dim);color:var(--tts)">6 Phases</span>
     </div>
 
-    <p class="text-dim" style="margin-bottom:20px">Each phase maps to a specific file and a specific insertion point. The goal is always to sit <em>above</em> the existing <code>InteractiveAgent.run()</code> call — not modify the agent internals.</p>
+    <p class="text-dim" style="margin-bottom:20px">Each phase maps to a specific file and a specific insertion point. The goal is always to sit <em>above</em> the native EVMBench solve/grade contract — usually around <code>DefaultAgent.run()</code> inside <code>evmbench_agent.py</code> or one level higher at the host orchestrator.</p>
 
     <!-- Phase 0 already covered above -->
 
@@ -486,7 +557,7 @@ uv run python -m minisweagent.run.extra.evmbench \
           <span class="step-num">2</span>
           <div class="step-content">
             Archive trajectory from <code>/home/logs/yudai-minisweagent.traj.json</code> and <code>submission/audit.md</code>.
-            <span class="step-file">Written by: src/minisweagent/run/extra/evmbench_agent.py:119 → save_traj()</span>
+            <span class="step-file">Written by: src/minisweagent/run/extra/evmbench_agent.py → save_traj()</span>
           </div>
         </li>
         <li>
@@ -504,7 +575,7 @@ uv run python -m minisweagent.run.extra.evmbench \
 
       <div class="alert alert-tts">
         <span class="alert-icon">🎯</span>
-        <div><strong>Insertion point:</strong> Wrap the <code>agent.run(task)</code> call at <code>evmbench_agent.py:109</code>. Do NOT modify <code>DefaultAgent</code> or <code>InteractiveAgent</code>. Create a new module that calls <code>evmbench_agent.main()</code> multiple times with different seeds/starting points, then merges the <code>submission/audit.md</code> outputs.</div>
+        <div><strong>Insertion point:</strong> wrap the single <code>DefaultAgent.run(task)</code> solve step, or create a host-level orchestrator that invokes the same container entrypoint multiple times. Do not fork the native graders; merge into the same <code>submission/audit.md</code> contract that EVMBench already scores.</div>
       </div>
 
       <ul class="step-list mt-8">
@@ -512,7 +583,7 @@ uv run python -m minisweagent.run.extra.evmbench \
           <span class="step-num">1</span>
           <div class="step-content">
             Create <code>src/minisweagent/run/extra/tts_detect.py</code>. Function: <code>run_branched_detect(mode, n_branches=3, audit_id) → merged_audit_md</code>
-            <span class="step-file">Calls: evmbench_agent.main() × n_branches with different MODE_SUPPLEMENTS seeds</span>
+            <span class="step-file">Calls the native EVMBench container entrypoint multiple times with different detect seeds, then merges reports back into the one artifact the detect grader expects.</span>
           </div>
         </li>
         <li>
@@ -604,7 +675,7 @@ branch_seeds = [
         <li>
           <span class="step-num">3</span>
           <div class="step-content">
-            Reuse <code>FailureAwareAgent</code> from <code>benchmark_episode.py</code>: 6 unrecoverable failure patterns already defined. Plug this in as the branch agent instead of plain <code>InteractiveAgent</code>.
+            Reuse <code>FailureAwareAgent</code> from <code>benchmark_episode.py</code>: 6 unrecoverable failure patterns already defined. Plug this in as the branch agent instead of a plain single-pass <code>DefaultAgent</code> solve step.
           </div>
         </li>
         <li>
@@ -626,7 +697,7 @@ branch_seeds = [
           <span class="step-num">1</span>
           <div class="step-content">
             Generate N patch candidates from detect findings. Each candidate is a git diff applied to audit/ contracts.
-            <span class="step-file">Insertion: evmbench_agent.py — after agent.run(), loop over submission/agent.diff variants</span>
+            <span class="step-file">Insertion: around the solve step in evmbench_agent.py or as a host-level fan-out/fan-in runner that still finishes with one <code>submission/agent.diff</code>.</span>
           </div>
         </li>
         <li>
@@ -778,7 +849,7 @@ python scripts/run_benchmark_exploit_v3.py \
             <span class="step-num">A</span>
             <div class="step-content">
               <strong>Few-shot exploit examples.</strong> Pickle (ControllerV4) and Sushi (SushiMaker) are well-known hacks with documented attack paths. Include a condensed version in the system prompt to bootstrap the agent's exploit strategy knowledge.
-              <span class="step-file">Injection point: evmbench_agent.py:28 → MODE_SUPPLEMENTS["exploit"] or config/extra/evmbench.yaml system_template</span>
+              <span class="step-file">Injection point: <code>MODE_SUPPLEMENTS["exploit"]</code> inside <code>src/minisweagent/run/extra/evmbench_agent.py</code>, or the EVMBench-specific prompt template if you want the few-shot example available to every exploit run.</span>
             </div>
           </li>
           <li>
@@ -838,11 +909,13 @@ python scripts/run_benchmark_exploit_v3.py \
   }
 }}%%
 flowchart TD
-    A([Start: evmbench.py<br/>host orchestrator]) --> B{Phase 0 done?}
-    B -->|No| FIX[Fix submodule agent IDs<br/>agents/yudai/config.yaml<br/>agents/yudai/start.sh]
+    A([Start: evmbench.py<br/>host orchestrator]) --> B{Native harness preserved?}
+    B -->|No| FIX[Keep eval.py task.py audit.py<br/>shared adapter contract<br/>and built-in graders intact]
     FIX --> B
     B -->|Yes| C[Build EVMBench images<br/>sync_evmbench_runtime]
-    C --> D{mode?}
+    C --> H[eval.py selects audits<br/>renders prompts<br/>filters vulnerabilities]
+    H --> I[task.py sets up solve container<br/>uploads AGENTS.md + start.sh]
+    I --> D{mode?}
 
     D -->|detect| DET[tts_detect.py<br/>NEW FILE]
     D -->|exploit| EXP[tts_exploit.py<br/>NEW FILE]
@@ -867,6 +940,11 @@ flowchart TD
     PCHECK -->|No| PREFEED[Re-prompt with test output<br/>S*-style feedback]
     PREFEED --> PGEN
 
+    SUBMIT_D --> GRADE[task.py extracts artifact<br/>build_grader(mode)]
+    SUBMIT_E --> GRADE
+    SUBMIT_P --> GRADE
+    GRADE --> OUT[DetectGrader / PatchGrader / ExploitGrader]
+
     classDef newfile fill:#3d1d6b,stroke:#a855f7,color:#e8eaf6
     classDef existing fill:#1c1f2e,stroke:#3d4175,color:#e8eaf6
     classDef blocker fill:#3d1020,stroke:#f43f5e,color:#f43f5e
@@ -874,7 +952,7 @@ flowchart TD
     classDef decision fill:#2a2414,stroke:#eab308,color:#eab308
 
     class DET,EXP,PAT newfile
-    class C,DBRANCH,EVERIFY,PTEST existing
+    class C,H,I,DBRANCH,EVERIFY,PTEST,GRADE,OUT existing
     class FIX,B blocker
     class SUBMIT_D,SUBMIT_E,SUBMIT_P submit
     class D,EPRUNE,PCHECK decision
@@ -912,7 +990,7 @@ flowchart TD
           <tr>
             <td><code>src/minisweagent/run/extra/evmbench_agent.py</code></td>
             <td><span class="badge badge-ok">Exists</span></td>
-            <td>Container entrypoint. Runs <code>InteractiveAgent</code> for one mode.</td>
+            <td>Container entrypoint. Runs <code>DefaultAgent</code> for one mode and preserves the native submission contract.</td>
             <td><span class="badge badge-detect">1</span></td>
           </tr>
           <tr>
@@ -953,8 +1031,8 @@ flowchart TD
           </tr>
           <tr>
             <td><code>evmBench-frontier-evals/.../agents/yudai/config.yaml</code></td>
-            <td><span class="badge badge-warn">Edit</span></td>
-            <td>Add <code>yudai-detect</code>, <code>yudai-patch</code>, <code>yudai-exploit</code> entries.</td>
+            <td><span class="badge badge-ok">Exists</span></td>
+            <td>Shared adapter map. <code>yudai-detect</code>, <code>yudai-patch</code>, and <code>yudai-exploit</code> all route to the same <code>start.sh</code> with different mode env.</td>
             <td><span class="badge badge-detect">0</span></td>
           </tr>
           <tr>
@@ -979,23 +1057,23 @@ flowchart TD
     <div class="gap-block">
       <div class="hook-row" style="border-left-color:var(--warn)">
         <span class="hook-label" style="min-width:56px">NOW #1</span>
-        <div><code>git submodule update --init --recursive</code> — unblock everything</div>
+        <div>Read the native EVMBench contract once: <code>eval.py</code>, <code>task.py</code>, <code>audit.py</code>, and the three graders. TTS has to preserve those interfaces.</div>
       </div>
       <div class="hook-row" style="border-left-color:var(--warn)">
         <span class="hook-label" style="min-width:56px">NOW #2</span>
-        <div>Edit submodule <code>agents/yudai/config.yaml</code> + <code>start.sh</code> to add <code>yudai-detect/patch/exploit</code> entries</div>
+        <div>Run one clean baseline with the native adapter, then archive the extracted artifact plus trajectory. That gives you the “no TTS” comparator for every later phase.</div>
       </div>
       <div class="hook-row" style="border-left-color:var(--detect)">
         <span class="hook-label" style="min-width:56px">NEXT #3</span>
-        <div>Run one detect baseline: <code>MSWEA_MODEL_CLASS=openrouter YUDAI_EVMBENCH_MODEL=anthropic/claude-sonnet-4-6 uv run python -m minisweagent.run.extra.evmbench --mode detect --audit 2024-08-phi --concurrency 1</code></div>
+        <div>Run one detect baseline: <code>YUDAI_EVMBENCH_MODEL_CLASS=openrouter YUDAI_EVMBENCH_MODEL=anthropic/claude-sonnet-4-6 uv run python -m minisweagent.run.extra.evmbench --mode detect --audit 2024-08-phi --concurrency 1</code></div>
       </div>
       <div class="hook-row" style="border-left-color:var(--detect)">
         <span class="hook-label" style="min-width:56px">NEXT #4</span>
-        <div>Archive <code>submission/audit.md</code> + trajectory as baseline. Record cost and finding count.</div>
+        <div>Archive <code>submission/audit.md</code> + trajectory as baseline. Record EVMBench score, cost, and finding count.</div>
       </div>
       <div class="hook-row" style="border-left-color:var(--tts)">
         <span class="hook-label" style="min-width:56px">TTS #5</span>
-        <div>Create <code>tts_detect.py</code> with 3-branch detect. Test on same audit. Compare finding count vs baseline at same token budget.</div>
+        <div>Create <code>tts_detect.py</code> with 3-branch detect. Test on the same audit, but still finish with one merged <code>submission/audit.md</code> so the detect grader stays unchanged.</div>
       </div>
       <div class="hook-row" style="border-left-color:var(--cache)">
         <span class="hook-label" style="min-width:56px">CACHE #6</span>
@@ -1003,7 +1081,7 @@ flowchart TD
       </div>
       <div class="hook-row" style="border-left-color:var(--exploit)">
         <span class="hook-label" style="min-width:56px">LATER #7</span>
-        <div>Only after detect TTS is measured: implement <code>tts_exploit.py</code> with parallel Strategy variants + execution-guided pruning via <code>execution_traces</code>.</div>
+        <div>Only after detect TTS is measured: implement <code>tts_exploit.py</code> with parallel Strategy variants + execution-guided pruning via <code>execution_traces</code>, but still emit the one <code>txs.json</code> artifact the exploit grader replays.</div>
       </div>
     </div>
   </div>
