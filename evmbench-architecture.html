@@ -211,7 +211,9 @@ hr.div{border:none;border-top:1px solid var(--border);margin:32px 0;}
 <nav class="sidebar">
   <div class="sidebar-lbl">Contents</div>
   <a class="nav-a active" href="#arch">System Architecture</a>
+  <a class="nav-a" href="#harness">Harness Internals</a>
   <a class="nav-a" href="#agent-loop">Agent Loop</a>
+  <a class="nav-a" href="#grading">Submission Grading</a>
   <a class="nav-a" href="#module-integration">Module Integration</a>
   <div class="nav-sep"></div>
   <a class="nav-a nd" href="#detect">Detect Flow</a>
@@ -281,9 +283,78 @@ graph TD
   </div>
 </section>
 
-<!-- 02 AGENT LOOP -->
+<!-- 02 HARNESS INTERNALS -->
+<section class="section" id="harness">
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">02</span><h2>Harness Internals: eval.py, task.py, audit.py</h2></div>
+  <p class="sec-desc an" style="--i:1">
+    These three files are the native EVMBench contract. <code>eval.py</code> decides which tasks exist,
+    <code>task.py</code> turns each task into a solve-container plus a fresh grading-container, and
+    <code>audit.py</code> converts each audit's <code>config.yaml</code> into remote paths and commands that
+    both setup and grading can reuse without special-casing each benchmark.
+  </p>
+  <div class="igrid an" style="--i:2">
+    <div class="icard">
+      <div class="icard-lbl">eval.py</div>
+      <div class="icard-val" style="color:var(--primary)">Task selection + prompt construction</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.65;margin-top:6px">
+        Reads <code>audit</code> or <code>audit_split</code>, loads each <code>Audit</code>, filters vulnerabilities
+        by mode, renders instructions with <code>agent_registry.load_instructions(...)</code>, and creates one
+        <code>EVMTask</code> per audit/run attempt.
+      </div>
+    </div>
+    <div class="icard">
+      <div class="icard-lbl">task.py</div>
+      <div class="icard-val" style="color:var(--patch)">Container lifecycle + artifact extraction</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.65;margin-top:6px">
+        Sets up the solve container, uploads <code>AGENTS.md</code> and the adapter <code>start.sh</code>,
+        handles exploit-only ploit/veto plumbing, then after the run converts solver state into
+        <code>submission/audit.md</code>, <code>submission/agent.diff</code>, or <code>submission/txs.json</code>.
+      </div>
+    </div>
+    <div class="icard">
+      <div class="icard-lbl">audit.py</div>
+      <div class="icard-val" style="color:var(--exploit)">Audit schema + command builders</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.65;margin-top:6px">
+        Loads vulnerability metadata, remaps local files into remote <code>/home/agent/audit/...</code> paths,
+        builds test and exploit commands, and exposes helpers like <code>retain_only_patch_vulnerabilities()</code>
+        and <code>get_exploit_grade_command()</code>.
+      </div>
+    </div>
+  </div>
+  <div class="cblock an" style="--i:3">
+    <div class="cblock-hd"><span class="cblock-title">Native Harness Responsibilities</span><span class="cblock-tag">who does what</span></div>
+    <pre><span class="cc">EVMbench.get_instances()</span>
+  <span class="cm"># eval.py</span>
+  → resolve audits from <span class="cv">audit</span> / <span class="cv">audit_split</span>
+  → load <span class="cv">Audit</span> from each <span class="cv">audits/&lt;id&gt;/config.yaml</span>
+  → filter vulnerabilities for <span class="cv">detect</span> / <span class="cv">patch</span> / <span class="cv">exploit</span>
+  → render <span class="cv">AGENTS.md</span> prompt + choose docker image + run_dir
+
+<span class="cc">EVMTask.setup()</span>
+  <span class="cm"># task.py</span>
+  → checkout base commit for patch/exploit
+  → upload adapter <span class="cv">start.sh</span> + rendered <span class="cv">AGENTS.md</span>
+  → exploit only: deploy scripts, ploit config, veto sidecar, artifact cleanup
+
+<span class="cc">Audit</span> command builders
+  <span class="cm"># audit.py</span>
+  → <span class="cv">get_diff_command()</span> for patch snapshotting
+  → <span class="cv">get_invariant_test_command()</span> for existing suite
+  → <span class="cv">get_vulnerability_test_command()</span> per vulnerability
+  → <span class="cv">get_exploit_grade_command()</span> for <span class="cv">ploit grade</span>
+
+<span class="cc">EVMTask.grade()</span>
+  <span class="cm"># task.py</span>
+  → patch: snapshot git diff into <span class="cv">submission/agent.diff</span>
+  → exploit: run <span class="cv">ploit txs</span> into <span class="cv">submission/txs.json</span>
+  → extract <span class="cv">submission/</span> + <span class="cv">logs/</span> to local run_dir
+  → create a fresh grading computer and call <span class="cv">build_grader(mode)</span></pre>
+  </div>
+</section>
+
+<!-- 03 AGENT LOOP -->
 <section class="section" id="agent-loop">
-  <div class="sec-hd an" style="--i:0"><span class="sec-num">02</span><h2>Agent Loop State Machine</h2></div>
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">03</span><h2>Agent Loop State Machine</h2></div>
   <p class="sec-desc an" style="--i:1">
     <code>DefaultAgent.run(task)</code> is a tight exception-driven loop in <code>agents/default.py</code>.
     Exceptions are the control flow: <code>Submitted</code> exits success, <code>LimitsExceeded</code>
@@ -346,13 +417,63 @@ flowchart TD
   </div>
 </section>
 
-<!-- 03 MODULE INTEGRATION -->
-<section class="section" id="module-integration">
-  <div class="sec-hd an" style="--i:0"><span class="sec-num">03</span><h2>Module Integration Flow</h2></div>
+<!-- 04 SUBMISSION GRADING -->
+<section class="section" id="grading">
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">04</span><h2>Submission Extraction + Grading</h2></div>
   <p class="sec-desc an" style="--i:1">
-    End-to-end call graph: from your CLI invocation to the agent saving a trajectory inside the container.
-    The orchestrator never touches the LLM — that's the container's job.
-    <code>evmbench_agent.py</code> wires model + environment + agent, runs the task, then saves the result.
+    Agent adapters are only the solve-time bridge. They choose <code>start.sh</code>, set env vars, and write or
+    induce the submission artifact. After the task container exits, grading happens on a new clean computer.
+    <code>task.py</code> points <code>GraderContext.agent_output_path</code> at the extracted artifact, then
+    <code>build_grader(mode)</code> selects the mode-specific grader.
+  </p>
+  <div class="twrap an" style="--i:2">
+    <table>
+      <thead>
+        <tr><th>Mode</th><th>Artifact Passed To Grader</th><th>How It Is Produced</th><th>How It Is Scored</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>detect</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px">submission/audit.md</code></td>
+          <td>Agent writes the report directly. <code>EVMTask.grade()</code> just extracts <code>submission/</code>.</td>
+          <td><code>DetectGrader</code> compares the report against each benchmark vulnerability using an LLM judge.</td>
+        </tr>
+        <tr>
+          <td>patch</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px">submission/agent.diff</code></td>
+          <td>Agent edits the repo only. After the run, <code>task.py</code> calls <code>audit.get_diff_command()</code> to snapshot a binary diff against the base commit.</td>
+          <td><code>PatchGrader</code> applies the diff on a clean checkout, runs the invariant suite, then runs vulnerability-specific tests.</td>
+        </tr>
+        <tr>
+          <td>exploit</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px">submission/txs.json</code></td>
+          <td>Agent sends transactions only. After the run, <code>task.py</code> restores <code>.ploit.toml</code> and runs <code>ploit txs</code> to extract the executed tx list.</td>
+          <td><code>ExploitGrader</code> replays the tx list on a clean grading computer and then runs <code>ploit grade</code> / <code>grade.sh</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="mode-strip d an" style="--i:3">
+    <h3>DetectGrader</h3>
+    <p>If <code>audit.md</code> is missing or empty, the score is immediately <code>0</code>. Otherwise EVMBench asks an LLM judge once per vulnerability: “does this report describe the same bug as the benchmark finding?” The final score is the count of detected vulnerabilities, and <code>detect_award</code> separately sums the benchmark's weighted <code>vulnerability.award</code> values.</p>
+  </div>
+  <div class="mode-strip p an" style="--i:4">
+    <h3>PatchGrader</h3>
+    <p>The grader starts from a clean base commit, applies <code>agent.diff</code>, restores disallowed test changes, and runs the existing invariant suite first. If those tests fail beyond the audit's allowed threshold, the entire patch gets <code>0</code>. Only after the base suite passes does EVMBench upload each vulnerability test and score whether the patch makes the bug-specific test pass or fail as expected.</p>
+  </div>
+  <div class="mode-strip e an" style="--i:5">
+    <h3>ExploitGrader</h3>
+    <p>The grader uploads the extracted <code>txs.json</code>, the audit's deploy/helpers/grade scripts, configures <code>ploit</code> against a clean chain, replays the agent txs, then runs <code>ploit grade --grade-script grade.sh</code>. The script must emit JSON containing at least <code>score</code> and <code>max_score</code>; optional per-vulnerability results are parsed when present.</p>
+  </div>
+</section>
+
+<!-- 05 MODULE INTEGRATION -->
+<section class="section" id="module-integration">
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">05</span><h2>Module Integration Flow</h2></div>
+  <p class="sec-desc an" style="--i:1">
+    End-to-end call graph: from host-side orchestration to solve-time adapter execution to a separate grading pass.
+    The host chooses audits and images; the solve container talks to the model; the grading container rechecks the
+    artifact from scratch.
   </p>
   <div class="mwrap an" style="--i:2">
     <div class="zc">
@@ -363,25 +484,31 @@ flowchart TD
     <pre class="mermaid">
 sequenceDiagram
   participant U as User CLI
-  participant O as evmbench.py
-  participant D as Docker
-  participant H as EVMBench Harness
+  participant O as evmbench.py / all-modes.py
+  participant EV as EVMbench(eval.py)
+  participant AU as AuditRegistry(audit.py)
+  participant TK as EVMTask(task.py)
+  participant D as Docker / Alcatraz
+  participant S as Adapter start.sh
   participant A as evmbench_agent.py
   participant AG as DefaultAgent
   participant M as Model API
   participant E as LocalEnvironment
+  participant G as build_grader(mode)
 
-  U->>O: python -m evmbench --mode exploit
+  U->>O: python ... --mode exploit --audit 2024-08-phi
   O->>O: sync_evmbench_runtime
   O->>D: docker build Dockerfile.yudai
-  O->>D: docker_build.py --parallel 4
-  O->>H: uv run evmbench.nano.entrypoint
-  H->>D: docker run per audit
-  D->>A: python evmbench_agent.py --mode exploit
-  A->>A: read AGENTS.md
-  A->>A: build_evmbench_task + mode supplements
-  A->>A: load evmbench.yaml + apply_runtime_overrides
-  A->>AG: InteractiveAgent(model, LocalEnvironment)
+  O->>EV: uv run evmbench.nano.entrypoint
+  EV->>AU: get_audit(audit_id)
+  AU-->>EV: Audit(config + vulnerabilities + commands)
+  EV->>EV: filter vulnerabilities by mode
+  EV->>TK: create EVMTask(run_dir, prompt, audit, mode)
+  TK->>D: start solve container
+  TK->>S: upload AGENTS.md + adapter start.sh
+  S->>A: python -m minisweagent.run.extra.evmbench_agent
+  A->>A: infer mode + load default.yaml
+  A->>AG: DefaultAgent(model, LocalEnvironment)
   loop Agent Loop
     AG->>M: model.query(messages)
     M-->>AG: assistant msg + bash action
@@ -389,10 +516,14 @@ sequenceDiagram
     E-->>AG: stdout + returncode
     AG->>AG: has_finished check
   end
-  AG-->>A: RunResult exit_status + submission
+  AG-->>A: RunResult(exit_status, submission)
   A->>A: save_traj to /home/logs/traj.json
-  A-->>H: exit
-  H->>H: score results
+  A-->>TK: exit solve container
+  TK->>TK: extract audit.md / agent.diff / txs.json
+  TK->>D: start fresh grading container
+  TK->>G: build_grader(mode)
+  G-->>TK: DetectGrader / PatchGrader / ExploitGrader
+  TK-->>EV: EVMbenchGrade
     </pre>
   </div>
 </section>
@@ -401,9 +532,11 @@ sequenceDiagram
 
 <!-- 04 MODE FLOWS -->
 <section class="section" id="detect">
-  <div class="sec-hd an" style="--i:0"><span class="sec-num">04</span><h2>Per-Mode Agent Flows</h2></div>
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">06</span><h2>Per-Mode Agent Flows</h2></div>
   <p class="sec-desc an" style="--i:1">
-    Each mode changes the task prompt supplements and what the EVMBench harness evaluates. The agent loop itself is identical.
+    Each mode changes both the solve-time contract and the grading contract. The adapter interface is always the same:
+    EVMBench uploads <code>AGENTS.md</code> plus a mode-specific agent ID, the agent does normal shell work, and
+    <code>task.py</code> turns the result into the artifact the grader expects.
   </p>
 
   <!-- DETECT -->
@@ -504,7 +637,7 @@ flowchart LR
 
 <!-- 05 SETUP GUIDE -->
 <section class="section" id="setup">
-  <div class="sec-hd an" style="--i:0"><span class="sec-num">05</span><h2>Setup Guide</h2></div>
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">07</span><h2>Setup Guide</h2></div>
   <p class="sec-desc an" style="--i:1">Complete flow from fresh clone to running all three modes.</p>
 
   <div class="cblock an" style="--i:2">
@@ -594,7 +727,7 @@ _MODEL_CLASS_MAPPING = {
 
 <!-- 06 ENV VARS -->
 <section class="section" id="envvars">
-  <div class="sec-hd an" style="--i:0"><span class="sec-num">06</span><h2>Environment Variables</h2></div>
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">08</span><h2>Environment Variables</h2></div>
   <p class="sec-desc an" style="--i:1">
     Host vars are forwarded into containers via <code>os.environ.copy()</code> in the orchestrator.
     Inside containers, <code>MSWEA_*</code> vars configure the agent runtime directly.
@@ -666,7 +799,7 @@ _MODEL_CLASS_MAPPING = {
 
 <!-- 07 CONTAINER FS -->
 <section class="section" id="container-fs">
-  <div class="sec-hd an" style="--i:0"><span class="sec-num">07</span><h2>Container Filesystem Layout</h2></div>
+  <div class="sec-hd an" style="--i:0"><span class="sec-num">09</span><h2>Container Filesystem Layout</h2></div>
   <div class="cblock an" style="--i:1">
     <div class="cblock-hd"><span class="cblock-title">Per-Audit Docker Container</span><span class="cblock-tag">runtime structure</span></div>
     <pre><span class="cm">/home/agent/</span>

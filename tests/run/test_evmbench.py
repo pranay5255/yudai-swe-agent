@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 from minisweagent.run.extra.evmbench import (
     build_evmbench_entrypoint_command,
     get_vendor_runtime_dir,
@@ -24,6 +26,14 @@ def test_get_yudai_agent_id_uses_mode_specific_adapter():
     assert get_yudai_agent_id("detect") == "yudai-detect"
     assert get_yudai_agent_id("patch") == "yudai-patch"
     assert get_yudai_agent_id("exploit") == "yudai-exploit"
+
+
+def test_yudai_agent_ids_exist_in_embedded_evmbench_config():
+    config_path = Path("evmBench-frontier-evals/project/evmbench/evmbench/agents/yudai/config.yaml")
+    config = yaml.safe_load(config_path.read_text())
+
+    for mode in ("detect", "patch", "exploit"):
+        assert get_yudai_agent_id(mode) in config
 
 
 def test_build_evmbench_entrypoint_command_prefers_audit_over_split():
