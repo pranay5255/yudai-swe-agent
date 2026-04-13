@@ -98,7 +98,17 @@ class RequestyModel:
 
     def query(self, messages: list[dict], tools: list[dict] | None = None, **kwargs) -> dict:
         response = self._query(self._prepare_messages_for_api(messages), **kwargs)
-        content = response["choices"][0]["message"]["content"] or ""
+        if "error" in response:
+            error = response["error"] or {}
+            raise RequestyAPIError(
+                f"Requesty API error: {error.get('message', 'Unknown error')} (code: {error.get('code', 'unknown')})"
+            )
+
+        choices = response.get("choices") or []
+        if not choices:
+            raise RequestyAPIError(f"Invalid Requesty API response: missing 'choices' field. Response: {response}")
+
+        content = (choices[0].get("message") or {}).get("content") or ""
         usage = response.get("usage", {})
         cost = usage.get("cost", 0.0)
         if cost == 0.0:
@@ -121,19 +131,7 @@ class RequestyModel:
                 self._record_cost(cost)
                 raise FormatError(str(e), extra=extra) from e
 
-<<<<<<< HEAD
-        if "error" in response:
-            error = response["error"]
-            raise RequestyAPIError(
-                f"Requesty API error: {error.get('message', 'Unknown error')} (code: {error.get('code', 'unknown')})"
-            )
-
-        if "choices" not in response or not response["choices"]:
-            raise RequestyAPIError(f"Invalid Requesty API response: missing 'choices' field. Response: {response}")
-
-=======
         self._record_cost(cost)
->>>>>>> ec8042e (feat: v2 tool-calling agent flow)
         return {
             "content": content,
             "extra": {
