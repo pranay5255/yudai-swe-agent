@@ -116,31 +116,60 @@ def _build_yudai_images(
     split: str | None,
     parallel: int,
 ) -> int:
-    commands = [
-        [
-            "docker",
-            "build",
-            "-f",
-            "ploit/Dockerfile",
-            "-t",
-            "ploit-builder:latest",
-            "--target",
-            "ploit-builder",
-            ".",
-        ],
-        [
-            "docker",
-            "build",
-            "-f",
-            "evmbench/Dockerfile.yudai",
-            "-t",
-            "evmbench/base:latest",
-            ".",
-        ],
-    ]
+    repo_root = get_repo_root()
+    commands: list[tuple[list[str], Path]] = []
 
-    for command in commands:
-        rc = _run(command, cwd=project_dir)
+    should_rebuild_yudai_base = os.getenv("YUDAI_REBUILD_BASE", "").lower() in {"1", "true", "yes"}
+    inspect_command = ["docker", "image", "inspect", "yudai-base:latest"]
+    if should_rebuild_yudai_base or _run(inspect_command, cwd=repo_root) != 0:
+        commands.append(
+            (
+                [
+                    "docker",
+                    "build",
+                    "-f",
+                    "docker/Dockerfile.base",
+                    "-t",
+                    "yudai-base:latest",
+                    ".",
+                ],
+                repo_root,
+            )
+        )
+
+    commands.extend(
+        [
+        (
+            [
+                "docker",
+                "build",
+                "-f",
+                "ploit/Dockerfile",
+                "-t",
+                "ploit-builder:latest",
+                "--target",
+                "ploit-builder",
+                ".",
+            ],
+            project_dir,
+        ),
+        (
+            [
+                "docker",
+                "build",
+                "-f",
+                "evmbench/Dockerfile.yudai",
+                "-t",
+                "evmbench/base:latest",
+                ".",
+            ],
+            project_dir,
+        ),
+        ]
+    )
+
+    for command, cwd in commands:
+        rc = _run(command, cwd=cwd)
         if rc != 0:
             return rc
 
