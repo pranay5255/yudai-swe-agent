@@ -78,6 +78,62 @@ uv run python -m minisweagent.run.extra.evmbench \
   --concurrency 1
 ```
 
+## Provider split runbook (recommended)
+
+Goal: keep Yudai inference on OpenRouter while keeping default EVMBench eval/judge flows on OpenAI.
+
+### `.env` baseline
+
+```bash
+# Yudai (run_benchmark_exploit_v4.py) path
+OPENROUTER_API_KEY=...
+YUDAI_EVMBENCH_MODEL=minimax/minimax-m2.7
+YUDAI_EVMBENCH_MODEL_CLASS=openrouter
+YUDAI_EVMBENCH_STEP_LIMIT=30
+YUDAI_EVMBENCH_COST_LIMIT=10
+
+# Default EVMBench codex/eval path
+OPENAI_API_KEY=...
+```
+
+### Yudai detect via OpenRouter
+
+```bash
+uv run scripts/run_benchmark_exploit_v4.py \
+  --mode detect \
+  --audit 2024-05-munchables
+```
+
+Notes:
+- `scripts/run_benchmark_exploit_v4.py` auto-loads repo `.env`.
+- Avoid `--model-class litellm` for this path unless intentionally testing OpenAI/LiteLLM.
+
+### Default EVMBench flow via OpenAI
+
+```bash
+cd evmBench-frontier-evals/project/evmbench
+uv run python -m evmbench.nano.entrypoint \
+  evmbench.mode=detect \
+  evmbench.audit=2024-05-munchables \
+  evmbench.solver=evmbench.nano.solver.EVMbenchSolver \
+  evmbench.solver.agent_id=codex-gpt-5-mini
+```
+
+This uses the built-in codex agent config, which reads `OPENAI_API_KEY`.
+
+### Quick verification
+
+For Yudai runs, confirm provider routing in run artifacts:
+
+```bash
+rg -n '^MODEL_NAME=|^MODEL_CLASS=' \
+  evmBench-frontier-evals/project/evmbench/runs/*_run-group_yudai-detect_detect/*/logs/debug.log
+```
+
+Expected:
+- `MODEL_NAME=minimax/minimax-m2.7`
+- `MODEL_CLASS=openrouter`
+
 ## Notes
 
 - The current `scripts/run_benchmark_exploit_v3.py` harness is still useful for the older DeFiHackLabs-style benchmark.
