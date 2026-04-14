@@ -96,12 +96,12 @@ class DefaultAgent:
         """Query the model and return the response message."""
         if 0 < self.config.step_limit <= self.n_calls or 0 < self.config.cost_limit <= self.cost:
             raise LimitsExceeded("Limits exceeded.")
-        response = self.model.query(
-            self.messages,
-            tools=self.env.get_tools(),
-            planner_mode=self.config.planner_mode,
-            planner_action_regex=self.config.planner_action_regex,
-        )
+        query_kwargs = {"tools": self.env.get_tools()}
+        if self.config.planner_mode:
+            query_kwargs["planner_mode"] = True
+        if self.config.planner_action_regex:
+            query_kwargs["planner_action_regex"] = self.config.planner_action_regex
+        response = self.model.query(self.messages, **query_kwargs)
         response_extra = response.get("extra", {}) or {}
         message_kwargs = dict(response_extra)
         # Some model layers attach timestamps in response metadata; avoid duplicate kwargs.
