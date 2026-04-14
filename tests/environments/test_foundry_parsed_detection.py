@@ -38,3 +38,31 @@ def test_parser_detects_nohup_prefixed_anvil_command(parser):
     )
     assert result is not None
     assert result["kind"] == "anvil"
+
+
+@pytest.mark.parametrize("parser", [BlockchainCommandParser(), BlockchainCommandParserV2()])
+def test_parser_decodes_cast_storage_addresses(parser):
+    result = parser.parse(
+        "cast storage 0x1111111111111111111111111111111111111111 0 --rpc-url http://127.0.0.1:8545",
+        {
+            "output": "0x0000000000000000000000002222222222222222222222222222222222222222\n",
+            "returncode": 0,
+        },
+    )
+    assert result is not None
+    assert result["kind"] == "cast_storage"
+    assert result["details"]["decoded_address"] == "0x2222222222222222222222222222222222222222"
+
+
+@pytest.mark.parametrize("parser", [BlockchainCommandParser(), BlockchainCommandParserV2()])
+def test_parser_surfaces_cast_call_failure_reason(parser):
+    result = parser.parse(
+        'cast call 0x1111111111111111111111111111111111111111 "owner()" --rpc-url http://127.0.0.1:8545',
+        {
+            "output": "Error: server returned an error response: error code 3: execution reverted: Ownable: caller is not the owner\n",
+            "returncode": 1,
+        },
+    )
+    assert result is not None
+    assert result["kind"] == "cast_call"
+    assert "execution reverted" in result["summary"].lower()
