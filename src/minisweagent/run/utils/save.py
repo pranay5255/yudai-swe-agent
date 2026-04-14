@@ -11,6 +11,28 @@ def _get_class_name_with_module(obj: Any) -> str:
     return f"{obj.__class__.__module__}.{obj.__class__.__name__}"
 
 
+def _json_default(obj: Any) -> Any:
+    """Best-effort JSON serializer for model/provider-specific objects in trajectories."""
+    if isinstance(obj, Path):
+        return str(obj)
+    model_dump = getattr(obj, "model_dump", None)
+    if callable(model_dump):
+        try:
+            return model_dump()
+        except TypeError:
+            pass
+    to_dict = getattr(obj, "dict", None)
+    if callable(to_dict):
+        try:
+            return to_dict()
+        except TypeError:
+            pass
+    data = getattr(obj, "__dict__", None)
+    if isinstance(data, dict):
+        return data
+    return str(obj)
+
+
 def save_traj(
     agent: Agent | None,
     path: Path | None,
@@ -63,6 +85,6 @@ def save_traj(
             data["info"].update(extra_info)
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2))
+    path.write_text(json.dumps(data, indent=2, default=_json_default))
     if print_path:
         print_fct(f"Saved trajectory to '{path}'")
