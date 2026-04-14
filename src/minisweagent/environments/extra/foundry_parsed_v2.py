@@ -32,6 +32,7 @@ class BlockchainCommandParserV2:
         re.IGNORECASE,
     )
     _HEX_32 = re.compile(r"^0x[a-fA-F0-9]{64}$")
+    _HEX_BLOB = re.compile(r"^0x[a-fA-F0-9]+$")
     _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
     def parse(self, command: str, result: dict[str, Any]) -> dict[str, Any] | None:
@@ -52,12 +53,20 @@ class BlockchainCommandParserV2:
             return self._parse_slither(output, returncode)
         if kind == "cast_call":
             return self._parse_cast_call(output, returncode)
+        if kind == "cast_storage":
+            return self._parse_cast_storage(output, returncode)
         if kind == "cast_block_number":
             return self._parse_cast_block_number(output, returncode)
         if kind == "cast_send":
             return self._parse_cast_send(output, returncode)
         if kind == "cast_balance":
             return self._parse_cast_balance(output, returncode)
+        if kind == "cast_code":
+            return self._parse_cast_code(output, returncode)
+        if kind == "cast_abi_decode":
+            return self._parse_cast_abi_decode(output, returncode)
+        if kind == "cast_rpc":
+            return self._parse_cast_rpc(output, returncode)
         if kind == "anvil":
             return self._parse_anvil(output, returncode)
         return None
@@ -76,12 +85,20 @@ class BlockchainCommandParserV2:
                 return "slither"
             if tool == "cast" and args[:1] == ["call"]:
                 return "cast_call"
+            if tool == "cast" and args[:1] == ["storage"]:
+                return "cast_storage"
             if tool == "cast" and args[:1] == ["block-number"]:
                 return "cast_block_number"
             if tool == "cast" and args[:1] == ["send"]:
                 return "cast_send"
             if tool == "cast" and args[:1] == ["balance"]:
                 return "cast_balance"
+            if tool == "cast" and args[:1] == ["code"]:
+                return "cast_code"
+            if tool == "cast" and args[:1] == ["abi-decode"]:
+                return "cast_abi_decode"
+            if tool == "cast" and args[:1] == ["rpc"]:
+                return "cast_rpc"
             if tool == "anvil":
                 return "anvil"
         return None
@@ -197,17 +214,17 @@ class BlockchainCommandParserV2:
 
     def _parse_cast_call(self, output: str, returncode: int) -> dict[str, Any]:
         if returncode != 0:
-            return {"kind": "cast_call", "summary": "cast call: failed", "details": {}}
-        lines = [line.strip() for line in output.strip().splitlines() if line.strip()]
-        first_line = lines[:1]
-        summary = f"cast call: {first_line[0]}" if first_line else "cast call: success"
-        details: dict[str, Any] = {}
-        if first_line and self._HEX_32.match(first_line[0]):
-            decoded = self._decode_padded_address(first_line[0])
-            if decoded:
-                details["decoded_address"] = decoded
-                summary = f"{summary} (address {decoded})"
-        return {"kind": "cast_call", "summary": summary, "details": details}
+            error = self._first_error_line(output)
+            summary = f"cast call: failed - {error}" if error else "cast call: failed"
+            return {"kind": "cast_call", "summary": summary, "details": {}}
+        return self._parse_cast_scalar_output("cast_call", "cast call", output)
+
+    def _parse_cast_storage(self, output: str, returncode: int) -> dict[str, Any]:
+        if returncode != 0:
+            error = self._first_error_line(output)
+            summary = f"cast storage: failed - {error}" if error else "cast storage: failed"
+            return {"kind": "cast_storage", "summary": summary, "details": {}}
+        return self._parse_cast_scalar_output("cast_storage", "cast storage", output)
 
     def _parse_cast_block_number(self, output: str, returncode: int) -> dict[str, Any]:
         if returncode != 0:
@@ -231,10 +248,47 @@ class BlockchainCommandParserV2:
 
     def _parse_cast_balance(self, output: str, returncode: int) -> dict[str, Any]:
         if returncode != 0:
-            return {"kind": "cast_balance", "summary": "cast balance: failed", "details": {}}
-        first_line = output.strip().splitlines()[:1]
+            error = self._first_error_line(output)
+            summary = f"cast balance: failed - {error}" if error else "cast balance: failed"
+            return {"kind": "cast_balance", "summary": summary, "details": {}}
+        first_line = self._meaningful_lines(output)[:1]
         summary = f"cast balance: {first_line[0]}" if first_line else "cast balance: success"
         return {"kind": "cast_balance", "summary": summary, "details": {}}
+
+    def _parse_cast_code(self, output: str, returncode: int) -> dict[str, Any]:
+        if returncode != 0:
+            error = self._first_error_line(output)
+            summary = f"cast code: failed - {error}" if error else "cast code: failed"
+            return {"kind": "cast_code", "summary": summary, "details": {}}
+        first_line = self._meaningful_lines(output)[:1]
+        if first_line and self._HEX_BLOB.match(first_line[0]):
+            code = first_line[0]
+            size = max(0, (len(code) - 2) // 2)
+            return {
+                "kind": "cast_code",
+                "summary": f"cast code: {size} bytes",
+                "details": {"code_size": size},
+            }
+        summary = f"cast code: {first_line[0]}" if first_line else "cast code: success"
+        return {"kind": "cast_code", "summary": summary, "details": {}}
+
+    def _parse_cast_abi_decode(self, output: str, returncode: int) -> dict[str, Any]:
+        if returncode != 0:
+            error = self._first_error_line(output)
+            summary = f"cast abi-decode: failed - {error}" if error else "cast abi-decode: failed"
+            return {"kind": "cast_abi_decode", "summary": summary, "details": {}}
+        first_line = self._meaningful_lines(output)[:1]
+        summary = f"cast abi-decode: {first_line[0]}" if first_line else "cast abi-decode: success"
+        return {"kind": "cast_abi_decode", "summary": summary, "details": {}}
+
+    def _parse_cast_rpc(self, output: str, returncode: int) -> dict[str, Any]:
+        if returncode != 0:
+            error = self._first_error_line(output)
+            summary = f"cast rpc: failed - {error}" if error else "cast rpc: failed"
+            return {"kind": "cast_rpc", "summary": summary, "details": {}}
+        first_line = self._meaningful_lines(output)[:1]
+        summary = f"cast rpc: {first_line[0]}" if first_line else "cast rpc: success"
+        return {"kind": "cast_rpc", "summary": summary, "details": {}}
 
     def _parse_anvil(self, output: str, returncode: int) -> dict[str, Any]:
         if returncode != 0:
@@ -258,15 +312,50 @@ class BlockchainCommandParserV2:
             return None
 
     def _first_error_line(self, output: str) -> str | None:
-        for line in output.splitlines():
+        for line in self._meaningful_lines(output):
             line = line.strip()
             if not line:
                 continue
             if self._EIP1559_ERROR.search(line):
                 return line[:200]
-            if "error" in line.lower() or "revert" in line.lower():
+            lowered = line.lower()
+            if (
+                "error" in lowered
+                or "revert" in lowered
+                or "failed" in lowered
+                or "invalid" in lowered
+                or "parse" in lowered
+            ):
                 return line[:200]
         return None
+
+    def _parse_cast_scalar_output(self, kind: str, label: str, output: str) -> dict[str, Any]:
+        first_line = self._meaningful_lines(output)[:1]
+        summary = f"{label}: {first_line[0]}" if first_line else f"{label}: success"
+        details: dict[str, Any] = {}
+        if first_line and self._HEX_32.match(first_line[0]):
+            decoded = self._decode_padded_address(first_line[0])
+            if decoded:
+                details["decoded_address"] = decoded
+                summary = f"{summary} (address {decoded})"
+            details["decoded_uint256"] = int(first_line[0], 16)
+            if details["decoded_uint256"] in {0, 1}:
+                details["decoded_bool_candidate"] = bool(details["decoded_uint256"])
+        return {"kind": kind, "summary": summary, "details": details}
+
+    def _meaningful_lines(self, output: str) -> list[str]:
+        lines = []
+        for line in output.strip().splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            lowered = stripped.lower()
+            if lowered.startswith(("warning:", "info:", "note:")):
+                continue
+            if "nightly build" in lowered or "recommended to use" in lowered:
+                continue
+            lines.append(stripped)
+        return lines
 
     @staticmethod
     def _decode_padded_address(value: str) -> str | None:
