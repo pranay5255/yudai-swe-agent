@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Test run" tests="93" failures="0" errors="0" timestamp="2026-05-13T13:28:24.466+00:00" time="0.691">
+    <testsuite name="test/HypoVault.t.sol:HypoVaultTest" tests="36" disabled="0" errors="0" failures="0" time="0.007">
+        <testcase name="test_basis_calculation_precision()" time="0.000">
+            <system-out>[PASS] test_basis_calculation_precision() (gas: 245976)</system-out>
+        </testcase>
+        <testcase name="test_cancel_unfulfilled_deposit()" time="0.000">
+            <system-out>[PASS] test_cancel_unfulfilled_deposit() (gas: 87009)</system-out>
+        </testcase>
+        <testcase name="test_cancel_unfulfilled_withdrawal()" time="0.000">
+            <system-out>[PASS] test_cancel_unfulfilled_withdrawal() (gas: 321303)</system-out>
+        </testcase>
+        <testcase name="test_cancel_withdrawal_restores_basis()" time="0.000">
+            <system-out>[PASS] test_cancel_withdrawal_restores_basis() (gas: 440286)</system-out>
+        </testcase>
+        <testcase name="test_complex_multi_epoch_scenario()" time="0.000">
+            <system-out>[PASS] test_complex_multi_epoch_scenario() (gas: 449326)</system-out>
+        </testcase>
+        <testcase name="test_deposit_full_multiple_users_same_epoch()" time="0.000">
+            <system-out>[PASS] test_deposit_full_multiple_users_same_epoch() (gas: 385012)</system-out>
+        </testcase>
+        <testcase name="test_deposit_full_single_user_epoch0()" time="0.000">
+            <system-out>[PASS] test_deposit_full_single_user_epoch0() (gas: 245194)</system-out>
+        </testcase>
+        <testcase name="test_deposit_full_single_user_later_epoch()" time="0.000">
+            <system-out>[PASS] test_deposit_full_single_user_later_epoch() (gas: 243554)</system-out>
+        </testcase>
+        <testcase name="test_deposit_multiple_partial_fulfillments()" time="0.000">
+            <system-out>[PASS] test_deposit_multiple_partial_fulfillments() (gas: 370391)</system-out>
+        </testcase>
+        <testcase name="test_deposit_partial_multiple_users()" time="0.000">
+            <system-out>[PASS] test_deposit_partial_multiple_users() (gas: 377090)</system-out>
+        </testcase>
+        <testcase name="test_deposit_partial_single_user()" time="0.000">
+            <system-out>[PASS] test_deposit_partial_single_user() (gas: 278494)</system-out>
+        </testcase>
+        <testcase name="test_epoch_transitions_deposits()" time="0.000">
+            <system-out>[PASS] test_epoch_transitions_deposits() (gas: 82138)</system-out>
+        </testcase>
+        <testcase name="test_epoch_transitions_withdrawals()" time="0.000">
+            <system-out>[PASS] test_epoch_transitions_withdrawals() (gas: 83645)</system-out>
+        </testcase>
+        <testcase name="test_exact_withdrawal_calculation()" time="0.000">
+            <system-out>[PASS] test_exact_withdrawal_calculation() (gas: 353910)</system-out>
+        </testcase>
+        <testcase name="test_execute_from_wrong_epoch()" time="0.000">
+            <system-out>[PASS] test_execute_from_wrong_epoch() (gas: 17915)</system-out>
+        </testcase>
+        <testcase name="test_large_numbers_precision()" time="0.000">
+            <system-out>[PASS] test_large_numbers_precision() (gas: 238478)</system-out>
+        </testcase>
+        <testcase name="test_manager_input_validation()" time="0.000">
+            <system-out>[PASS] test_manager_input_validation() (gas: 116055)</system-out>
+        </testcase>
+        <testcase name="test_mixed_partial_fulfillments_across_epochs()" time="0.000">
+            <system-out>[PASS] test_mixed_partial_fulfillments_across_epochs() (gas: 467458)</system-out>
+        </testcase>
+        <testcase name="test_multiple_cancellations()" time="0.000">
+            <system-out>[PASS] test_multiple_cancellations() (gas: 161751)</system-out>
+        </testcase>
+        <testcase name="test_multiple_users_partial_deposit_exact_numbers()" time="0.000">
+            <system-out>[PASS] test_multiple_users_partial_deposit_exact_numbers() (gas: 368830)</system-out>
+        </testcase>
+        <testcase name="test_onlyManager_functions()" time="0.000">
+            <system-out>[PASS] test_onlyManager_functions() (gas: 133373)</system-out>
+        </testcase>
+        <testcase name="test_onlyOwner_functions()" time="0.000">
+            <system-out>[PASS] test_onlyOwner_functions() (gas: 43977)</system-out>
+        </testcase>
+        <testcase name="test_partial_deposit_exact_numbers()" time="0.000">
+            <system-out>[PASS] test_partial_deposit_exact_numbers() (gas: 275738)</system-out>
+        </testcase>
+        <testcase name="test_partial_deposit_share_calculation()" time="0.000">
+            <system-out>[PASS] test_partial_deposit_share_calculation() (gas: 274698)</system-out>
+        </testcase>
+        <testcase name="test_partial_withdrawal_exact_numbers()" time="0.000">
+            <system-out>[PASS] test_partial_withdrawal_exact_numbers() (gas: 383510)</system-out>
+        </testcase>
+        <testcase name="test_reserved_withdrawal_assets_tracking()" time="0.000">
+            <system-out>[PASS] test_reserved_withdrawal_assets_tracking() (gas: 376289)</system-out>
+        </testcase>
+        <testcase name="test_sequential_deposit_withdrawal_cycles()" time="0.000">
+            <system-out>[PASS] test_sequential_deposit_withdrawal_cycles() (gas: 451456)</system-out>
+        </testcase>
+        <testcase name="test_total_supply_updates()" time="0.000">
+            <system-out>[PASS] test_total_supply_updates() (gas: 408758)</system-out>
+        </testcase>
+        <testcase name="test_vaultParameters()" time="0.000">
+            <system-out>[PASS] test_vaultParameters() (gas: 38356)</system-out>
+        </testcase>
+        <testcase name="test_withdrawal_not_fulfillable()" time="0.000">
+            <system-out>[PASS] test_withdrawal_not_fulfillable() (gas: 355410)</system-out>
+        </testcase>
+        <testcase name="test_withdrawal_partial()" time="0.000">
+            <system-out>[PASS] test_withdrawal_partial() (gas: 492182)</system-out>
+        </testcase>
+        <testcase name="test_withdrawal_scenario_verification()" time="0.000">
+            <system-out>[PASS] test_withdrawal_scenario_verification() (gas: 356353)</system-out>
+        </testcase>
+        <testcase name="test_withdrawal_with_loss_no_performance_fee()" time="0.000">
+            <system-out>[PASS] test_withdrawal_with_loss_no_performance_fee() (gas: 455899)</system-out>
+        </testcase>
+        <testcase name="test_withdrawal_with_multiple_users()" time="0.000">
+            <system-out>[PASS] test_withdrawal_with_multiple_users() (gas: 456190)</system-out>
+        </testcase>
+        <testcase name="test_withdrawal_with_profit_performance_fee()" time="0.000">
+            <system-out>[PASS] test_withdrawal_with_profit_performance_fee() (gas: 411125)</system-out>
+        </testcase>
+        <testcase name="test_zero_amount_deposit()" time="0.000">
+            <system-out>[PASS] test_zero_amount_deposit() (gas: 37293)</system-out>
+        </testcase>
+        <system-out>Suite result: ok. 36 passed; 0 failed; 0 skipped; finished in 6.58ms (5.64ms CPU time)</system-out>
+    </testsuite>
+    <testsuite name="test/PanopticVaultAccountant.t.sol:PanopticVaultAccountantTest" tests="56" disabled="0" errors="0" failures="0" time="0.684">
+        <testcase name="testFuzz_computeNAV_priceDeviationBoundary(int24)" time="0.331">
+            <system-out>[PASS] testFuzz_computeNAV_priceDeviationBoundary(int24) (runs: 256, μ: 631632, ~: 631645)</system-out>
+        </testcase>
+        <testcase name="testFuzz_computeNAV_tokenBalances(uint128,uint128,uint128)" time="0.322">
+            <system-out>[PASS] testFuzz_computeNAV_tokenBalances(uint128,uint128,uint128) (runs: 256, μ: 551567, ~: 552655)</system-out>
+        </testcase>
+        <testcase name="testFuzz_computeNAV_underlyingBalance(uint256)" time="0.013">
+            <system-out>[PASS] testFuzz_computeNAV_underlyingBalance(uint256) (runs: 256, μ: 71499, ~: 71810)</system-out>
+        </testcase>
+        <testcase name="testFuzz_updatePoolsHash(address,bytes32)" time="0.006">
+            <system-out>[PASS] testFuzz_updatePoolsHash(address,bytes32) (runs: 256, μ: 37061, ~: 37061)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_basicScenario()" time="0.001">
+            <system-out>[PASS] test_computeNAV_basicScenario() (gas: 631571)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_emptyPools()" time="0.000">
+            <system-out>[PASS] test_computeNAV_emptyPools() (gas: 71873)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_ethHandling()" time="0.001">
+            <system-out>[PASS] test_computeNAV_ethHandling() (gas: 631306)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_exactCalculation_negativeExposureToZero()" time="0.001">
+            <system-out>[PASS] test_computeNAV_exactCalculation_negativeExposureToZero() (gas: 298485)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_exactCalculation_noPositions()" time="0.001">
+            <system-out>[PASS] test_computeNAV_exactCalculation_noPositions() (gas: 630816)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_exactCalculation_onlyUnderlyingToken()" time="0.001">
+            <system-out>[PASS] test_computeNAV_exactCalculation_onlyUnderlyingToken() (gas: 339270)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_exactCalculation_sameTokenAsUnderlying()" time="0.001">
+            <system-out>[PASS] test_computeNAV_exactCalculation_sameTokenAsUnderlying() (gas: 484028)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_exactCalculation_singleLegPosition()" time="0.002">
+            <system-out>[PASS] test_computeNAV_exactCalculation_singleLegPosition() (gas: 1116461)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_exactCalculation_withExactPremiums()" time="0.001">
+            <system-out>[PASS] test_computeNAV_exactCalculation_withExactPremiums() (gas: 424860)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_exactCalculation_withPremiums()" time="0.001">
+            <system-out>[PASS] test_computeNAV_exactCalculation_withPremiums() (gas: 671193)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_flippedOracles_conversion()" time="0.001">
+            <system-out>[PASS] test_computeNAV_flippedOracles_conversion() (gas: 819487)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_flippedTokens()" time="0.001">
+            <system-out>[PASS] test_computeNAV_flippedTokens() (gas: 631994)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_fullIntegration_realScenario()" time="0.003">
+            <system-out>[PASS] test_computeNAV_fullIntegration_realScenario() (gas: 1204671)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_inRangeCall_long()" time="0.001">
+            <system-out>[PASS] test_computeNAV_inRangeCall_long() (gas: 774643)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_inRangePut_long()" time="0.001">
+            <system-out>[PASS] test_computeNAV_inRangePut_long() (gas: 774008)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_incorrectPositionList_wrongLegsCount()" time="0.000">
+            <system-out>[PASS] test_computeNAV_incorrectPositionList_wrongLegsCount() (gas: 288158)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_incorrectPositionList_zeroBalance()" time="0.000">
+            <system-out>[PASS] test_computeNAV_incorrectPositionList_zeroBalance() (gas: 243551)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_invalidPools()" time="0.000">
+            <system-out>[PASS] test_computeNAV_invalidPools() (gas: 62048)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_ironCondor_fourLegPosition()" time="0.001">
+            <system-out>[PASS] test_computeNAV_ironCondor_fourLegPosition() (gas: 799606)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_largeNumbers_noOverflow()" time="0.001">
+            <system-out>[PASS] test_computeNAV_largeNumbers_noOverflow() (gas: 671082)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_maxPriceDeviationBoundary()" time="0.001">
+            <system-out>[PASS] test_computeNAV_maxPriceDeviationBoundary() (gas: 630622)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_maxPriceDeviationBoundary_exact()" time="0.001">
+            <system-out>[PASS] test_computeNAV_maxPriceDeviationBoundary_exact() (gas: 630740)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_multiLegPosition()" time="0.001">
+            <system-out>[PASS] test_computeNAV_multiLegPosition() (gas: 779292)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_multiPool_exactAggregation()" time="0.003">
+            <system-out>[PASS] test_computeNAV_multiPool_exactAggregation() (gas: 963463)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_multiplePoolsScenario()" time="0.002">
+            <system-out>[PASS] test_computeNAV_multiplePoolsScenario() (gas: 963073)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_multiplePositions_aggregation()" time="0.001">
+            <system-out>[PASS] test_computeNAV_multiplePositions_aggregation() (gas: 840369)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_negativeExposure_handledCorrectly()" time="0.001">
+            <system-out>[PASS] test_computeNAV_negativeExposure_handledCorrectly() (gas: 527679)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_negativePnL()" time="0.001">
+            <system-out>[PASS] test_computeNAV_negativePnL() (gas: 527245)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_outOfRangeCall_short()" time="0.001">
+            <system-out>[PASS] test_computeNAV_outOfRangeCall_short() (gas: 772717)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_outOfRangePut_short()" time="0.001">
+            <system-out>[PASS] test_computeNAV_outOfRangePut_short() (gas: 772527)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_precisionTest_smallAmounts()" time="0.001">
+            <system-out>[PASS] test_computeNAV_precisionTest_smallAmounts() (gas: 670618)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_priceConversion_exactRatio()" time="0.001">
+            <system-out>[PASS] test_computeNAV_priceConversion_exactRatio() (gas: 808650)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_priceDeviation_exactBoundary()" time="0.004">
+            <system-out>[PASS] test_computeNAV_priceDeviation_exactBoundary() (gas: 1301035)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_revert_incorrectLegsCount()" time="0.001">
+            <system-out>[PASS] test_computeNAV_revert_incorrectLegsCount() (gas: 526165)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_revert_invalidPoolsHash()" time="0.000">
+            <system-out>[PASS] test_computeNAV_revert_invalidPoolsHash() (gas: 62290)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_revert_stalePoolPrice()" time="0.000">
+            <system-out>[PASS] test_computeNAV_revert_stalePoolPrice() (gas: 379045)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_revert_zeroPositionBalance()" time="0.001">
+            <system-out>[PASS] test_computeNAV_revert_zeroPositionBalance() (gas: 453290)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_staleOraclePrice_pool()" time="0.000">
+            <system-out>[PASS] test_computeNAV_staleOraclePrice_pool() (gas: 182257)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_staleOraclePrice_token0()" time="0.001">
+            <system-out>[PASS] test_computeNAV_staleOraclePrice_token0() (gas: 508671)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_staleOraclePrice_token1()" time="0.001">
+            <system-out>[PASS] test_computeNAV_staleOraclePrice_token1() (gas: 627085)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_straddlePosition_exactCalculation()" time="0.001">
+            <system-out>[PASS] test_computeNAV_straddlePosition_exactCalculation() (gas: 785356)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_tokenConversion()" time="0.001">
+            <system-out>[PASS] test_computeNAV_tokenConversion() (gas: 630244)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_twapCalculation_verification()" time="0.001">
+            <system-out>[PASS] test_computeNAV_twapCalculation_verification() (gas: 753845)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_withPositions()" time="0.001">
+            <system-out>[PASS] test_computeNAV_withPositions() (gas: 772906)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_zeroAmounts_edgeCase()" time="0.001">
+            <system-out>[PASS] test_computeNAV_zeroAmounts_edgeCase() (gas: 491676)</system-out>
+        </testcase>
+        <testcase name="test_computeNAV_zeroBalances()" time="0.001">
+            <system-out>[PASS] test_computeNAV_zeroBalances() (gas: 490994)</system-out>
+        </testcase>
+        <testcase name="test_lockVault_onlyOwner()" time="0.000">
+            <system-out>[PASS] test_lockVault_onlyOwner() (gas: 15950)</system-out>
+        </testcase>
+        <testcase name="test_lockVault_permanent()" time="0.000">
+            <system-out>[PASS] test_lockVault_permanent() (gas: 36951)</system-out>
+        </testcase>
+        <testcase name="test_lockVault_success()" time="0.000">
+            <system-out>[PASS] test_lockVault_success() (gas: 38828)</system-out>
+        </testcase>
+        <testcase name="test_updatePoolsHash_onlyOwner()" time="0.000">
+            <system-out>[PASS] test_updatePoolsHash_onlyOwner() (gas: 16386)</system-out>
+        </testcase>
+        <testcase name="test_updatePoolsHash_success()" time="0.000">
+            <system-out>[PASS] test_updatePoolsHash_success() (gas: 40067)</system-out>
+        </testcase>
+        <testcase name="test_updatePoolsHash_vaultLocked()" time="0.000">
+            <system-out>[PASS] test_updatePoolsHash_vaultLocked() (gas: 62891)</system-out>
+        </testcase>
+        <system-out>Suite result: ok. 56 passed; 0 failed; 0 skipped; finished in 683.63ms (727.73ms CPU time)</system-out>
+    </testsuite>
+    <testsuite name="test/PoC.t.sol:PoC" tests="1" disabled="0" errors="0" failures="0" time="0.001">
+        <testcase name="test_submissionValidity()" time="0.000">
+            <system-out>[PASS] test_submissionValidity() (gas: 514)</system-out>
+        </testcase>
+        <system-out>Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 1.17ms (23.27µs CPU time)</system-out>
+    </testsuite>
+</testsuites>
+

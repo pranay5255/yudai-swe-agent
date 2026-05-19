@@ -1,0 +1,203 @@
+diff --git a/contracts/AlgebraCLVe33/GaugeCL.sol b/contracts/AlgebraCLVe33/GaugeCL.sol
+index d943b30..234466d 100644
+--- a/contracts/AlgebraCLVe33/GaugeCL.sol
++++ b/contracts/AlgebraCLVe33/GaugeCL.sol
+@@ -155,16 +155,19 @@ contract GaugeCL is ReentrancyGuard, Ownable {
+     }
+ 
+     function notifyRewardAmount(address token, uint256 reward) external nonReentrant 
+-        isNotEmergency onlyDistribution returns (IncentiveKey memory incentivekey, uint256 rewardRate, uint128 bonusRewardRate) {
++        isNotEmergency onlyDistribution returns (IncentiveKey memory incentivekey, uint256 newRewardRate, uint128 bonusRewardRate) {
+         require(token == address(rewardToken), "not rew token");
+         // Transfer emission to Farming Virtual Pool address
++        uint256 oldRewardRate = rewardRate;
+         if (block.timestamp >= _periodFinish) {
+-            rewardRate = reward / DURATION;
++            newRewardRate = reward / DURATION;
+         } else {
+             uint256 remaining = _periodFinish - block.timestamp;
+-            uint256 leftover = remaining * rewardRate;
+-            rewardRate = (reward + leftover) / DURATION;
++            uint256 leftover = remaining * oldRewardRate;
++            newRewardRate = (reward + leftover) / DURATION;
+         }
++        rewardRate = newRewardRate;
++        lastUpdateTime = block.timestamp;
+         _periodFinish = block.timestamp + DURATION;
+         (IERC20Minimal rewardTokenAdd, IERC20Minimal bonusRewardTokenAdd, IAlgebraPool pool, uint256 nonce) = 
+                 algebraEternalFarming.incentiveKeys(poolAddress);
+@@ -308,4 +311,3 @@ contract GaugeCL is ReentrancyGuard, Ownable {
+ 
+ }
+ 
+-
+diff --git a/contracts/GaugeV2.sol b/contracts/GaugeV2.sol
+index d301ee3..c214674 100644
+--- a/contracts/GaugeV2.sol
++++ b/contracts/GaugeV2.sol
+@@ -53,6 +53,7 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
+     uint256 internal _totalSupply;
+     mapping(address => uint256) internal _balances;
+     mapping(address => uint256) public maturityTime;
++    uint256 public genesisMaturityTime;
+ 
+     event RewardAdded(uint256 reward);
+     event Deposit(address indexed user, uint256 amount);
+@@ -180,6 +181,18 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
+         return balance;
+     }
+ 
++    function _lockedGenesisBalance(address account) internal view returns (uint256) {
++        if (genesisPool == address(0) || block.timestamp >= genesisMaturityTime) {
++            return 0;
++        }
++
++        return IGenesisPool(genesisPool).balanceOf(account);
++    }
++
++    function _withdrawableBalance(address account) internal view returns (uint256) {
++        return _balanceOf(account) - _lockedGenesisBalance(account);
++    }
++
+     ///@notice last time reward
+     function lastTimeRewardApplicable() public view returns (uint256) {
+         return Math.min(block.timestamp, _periodFinish);
+@@ -228,7 +241,12 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
+     function _depositsForGenesis(address _tokenOwner, uint256 _timestamp, uint256 _totalAmount) internal updateReward(address(0)) {       
+         TOKEN.safeTransferFrom(msg.sender, address(this), _totalAmount);
+         _totalSupply = _totalSupply + _totalAmount;
+-        maturityTime[_tokenOwner] = _timestamp;
++        if (_timestamp > maturityTime[_tokenOwner]) {
++            maturityTime[_tokenOwner] = _timestamp;
++        }
++        if (_timestamp > genesisMaturityTime) {
++            genesisMaturityTime = _timestamp;
++        }
+ 
+         emit DepositsForGenesis(_tokenOwner, _totalAmount);
+     }
+@@ -260,7 +278,7 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
+ 
+     ///@notice withdraw all token
+     function withdrawAll() external {
+-        _withdraw(_balanceOf(msg.sender));
++        _withdraw(_withdrawableBalance(msg.sender));
+     }
+ 
+     ///@notice withdraw a certain amount of TOKEN
+@@ -272,7 +290,7 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
+     function _withdraw(uint256 amount) internal nonReentrant isNotEmergency updateReward(msg.sender) {
+         require(amount > 0, "ZV");
+         require(_balanceOf(msg.sender) > 0, "ZV");
+-        require(block.timestamp >= maturityTime[msg.sender], "!MATURE");
++        require(amount <= _withdrawableBalance(msg.sender), "!MATURE");
+ 
+         _totalSupply = _totalSupply - amount;
+         _deductBalance(amount);
+@@ -311,21 +329,18 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
+     }
+ 
+     function _deductBalance(uint256 _amount) internal {
+-        uint256 gensisBalance = 0;
+-        if(genesisPool != address(0)) gensisBalance = IGenesisPool(genesisPool).balanceOf(msg.sender);
+-
+-        uint256 genesisDeduction = gensisBalance <= _amount ? gensisBalance : _amount;
+-        uint256 gaugeDeduction =  _amount - genesisDeduction;
++        uint256 gaugeDeduction = _balances[msg.sender] <= _amount ? _balances[msg.sender] : _amount;
++        uint256 genesisDeduction = _amount - gaugeDeduction;
+ 
+         _balances[msg.sender] = _balances[msg.sender] - gaugeDeduction;
+-        if(genesisPool != address(0)){
++        if(genesisPool != address(0) && genesisDeduction > 0){
+             IGenesisPool(genesisPool).deductAmount(msg.sender, genesisDeduction);
+         }
+     }
+ 
+     ///@notice withdraw all TOKEN and harvest rewardToken
+     function withdrawAllAndHarvest() external {
+-        _withdraw(_balanceOf(msg.sender));
++        _withdraw(_withdrawableBalance(msg.sender));
+         getReward();
+     }
+ 
+diff --git a/contracts/GenesisPool.sol b/contracts/GenesisPool.sol
+index 2405f66..de06393 100644
+--- a/contracts/GenesisPool.sol
++++ b/contracts/GenesisPool.sol
+@@ -46,11 +46,6 @@ contract GenesisPool is IGenesisPool, IGenesisPoolBase {
+         _;
+     }
+ 
+-    modifier onlyManagerOrProtocol() {
+-        require(msg.sender == genesisManager || msg.sender == genesisInfo.tokenOwner);
+-        _;
+-    }
+-
+     modifier onlyGauge() {
+         require(msg.sender == liquidityPoolInfo.gaugeAddress);
+         _;
+@@ -71,6 +66,8 @@ contract GenesisPool is IGenesisPool, IGenesisPoolBase {
+ 
+ 
+     function setGenesisPoolInfo(GenesisInfo calldata _genesisInfo, TokenAllocation calldata _allocationInfo, address _auction) external onlyManager(){
++        require(poolStatus == PoolStatus.DEFAULT, "INITIALIZED");
++        require(_auction != address(0), "ZA");
+         genesisInfo = _genesisInfo;
+ 
+         genesisInfo.duration = BlackTimeLibrary.epochMultiples(genesisInfo.duration);
+@@ -392,7 +389,7 @@ contract GenesisPool is IGenesisPool, IGenesisPoolBase {
+         return liquidityPoolInfo;
+     }
+ 
+-    function setAuction(address _auction) external onlyManagerOrProtocol {
++    function setAuction(address _auction) external onlyManager {
+         require(_auction != address(0), "ZA");
+         require(poolStatus == PoolStatus.NATIVE_TOKEN_DEPOSITED, "INS");
+         auction = IAuction(_auction);
+@@ -408,4 +405,4 @@ contract GenesisPool is IGenesisPool, IGenesisPoolBase {
+         genesisInfo.startTime = _startTime;
+     }
+ 
+-}
+\ No newline at end of file
++}
+diff --git a/contracts/GenesisPoolManager.sol b/contracts/GenesisPoolManager.sol
+index 2b1d2d5..39a513e 100644
+--- a/contracts/GenesisPoolManager.sol
++++ b/contracts/GenesisPoolManager.sol
+@@ -120,15 +120,16 @@ contract GenesisPoolManager is IGenesisPoolBase, IGenesisPoolManager, OwnableUpg
+         
+         require(genesisPoolInfo.nativeToken == nativeToken, "MISMATCH");
+         
+-        genesisPool = genesisFactory.getGenesisPool(nativeToken);
+-        if(genesisPool == address(0))
+-            genesisPool = genesisFactory.createGenesisPool(_sender, nativeToken, _fundingToken);
++        require(genesisFactory.getGenesisPool(nativeToken) == address(0), "ACTIVE_GENESIS");
++        genesisPool = genesisFactory.createGenesisPool(_sender, nativeToken, _fundingToken);
+ 
+         require(genesisPool != address(0), "ZA");
+-        IERC20(nativeToken).safeTransferFrom(_sender, genesisPool, allocationInfo.proposedNativeAmount);
+ 
+         address auction = auctionFactory.auctions(auctionIndex);
+         auction = auction == address(0) ? auctionFactory.auctions(0) : auction;
++        require(auction != address(0) && auctionFactory.isAuction(auction), "!AUCTION");
++
++        IERC20(nativeToken).safeTransferFrom(_sender, genesisPool, allocationInfo.proposedNativeAmount);
+         if(!isNativeToken[nativeToken]){
+             nativeTokens.push(nativeToken); 
+             isNativeToken[nativeToken] = true;
+@@ -268,6 +269,7 @@ contract GenesisPoolManager is IGenesisPoolBase, IGenesisPoolManager, OwnableUpg
+ 
+     function setAuction(address _genesisPool, address _auction) external Governance {
+         require(_genesisPool != address(0), "ZA");
++        require(_auction != address(0) && auctionFactory.isAuction(_auction), "!AUCTION");
+         IGenesisPool(_genesisPool).setAuction(_auction);
+     }
+ 
+@@ -314,4 +316,4 @@ contract GenesisPoolManager is IGenesisPoolBase, IGenesisPoolManager, OwnableUpg
+         require(_router == address(0), "ZA");
+         router = _router;
+     }
+-}
+\ No newline at end of file
++}

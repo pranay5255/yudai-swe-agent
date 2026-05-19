@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Test run" tests="1" failures="0" errors="0" timestamp="2026-05-13T13:28:30.683+00:00" time="0.002">
+    <testsuite name="test/PoC.t.sol:PoC" tests="1" disabled="0" errors="0" failures="0" time="0.002">
+        <testcase name="test_submissionValidity()" time="0.001">
+            <system-out>[PASS] test_submissionValidity() (gas: 349667)</system-out>
+        </testcase>
+        <system-out>Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 2.00ms (761.96µs CPU time)</system-out>
+    </testsuite>
+</testsuites>
+

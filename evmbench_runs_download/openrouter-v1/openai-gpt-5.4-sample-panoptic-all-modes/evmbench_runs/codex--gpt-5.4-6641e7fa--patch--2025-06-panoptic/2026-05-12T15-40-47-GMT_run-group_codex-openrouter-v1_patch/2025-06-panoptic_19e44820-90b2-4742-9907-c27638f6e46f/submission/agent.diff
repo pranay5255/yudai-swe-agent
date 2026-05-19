@@ -1,0 +1,106 @@
+diff --git a/src/HypoVault.sol b/src/HypoVault.sol
+index bee1b8a..bb83b5f 100644
+--- a/src/HypoVault.sol
++++ b/src/HypoVault.sol
+@@ -128,6 +128,9 @@ contract HypoVault is ERC20Minimal, Multicall, Ownable {
+     /// @notice The withdrawal fulfillment exceeds the maximum amount of assets that can be received
+     error WithdrawalNotFulfillable();
+ 
++    /// @notice The requested deposit fulfillment exceeds the queued assets for the epoch.
++    error DepositNotFulfillable();
++
+     /*//////////////////////////////////////////////////////////////
+                                 STORAGE
+     //////////////////////////////////////////////////////////////*/
+@@ -156,6 +159,9 @@ contract HypoVault is ERC20Minimal, Multicall, Ownable {
+     /// @notice Assets in the vault reserved for fulfilled withdrawal requests.
+     uint256 public reservedWithdrawalAssets;
+ 
++    /// @notice Tracks underlying assets introduced through `requestDeposit` and not yet fulfilled/cancelled.
++    uint256 public pendingDepositAssets;
++
+     /// @notice Contains information about the quantity of assets requested and fulfilled for deposits in each epoch.
+     mapping(uint256 epoch => DepositEpochState) public depositEpochState;
+ 
+@@ -233,6 +239,7 @@ contract HypoVault is ERC20Minimal, Multicall, Ownable {
+         queuedDeposit[msg.sender][currentEpoch] += assets;
+ 
+         depositEpochState[currentEpoch].assetsDeposited += assets;
++        pendingDepositAssets += assets;
+ 
+         SafeTransferLib.safeTransferFrom(underlyingToken, msg.sender, address(this), assets);
+ 
+@@ -277,6 +284,7 @@ contract HypoVault is ERC20Minimal, Multicall, Ownable {
+         queuedDeposit[depositor][currentEpoch] = 0;
+ 
+         depositEpochState[currentEpoch].assetsDeposited -= uint128(queuedDepositAmount);
++        pendingDepositAssets -= queuedDepositAmount;
+ 
+         SafeTransferLib.safeTransfer(underlyingToken, depositor, queuedDepositAmount);
+ 
+@@ -477,9 +485,18 @@ contract HypoVault is ERC20Minimal, Multicall, Ownable {
+ 
+         DepositEpochState memory epochState = depositEpochState[currentEpoch];
+ 
++        if (assetsToFulfill > epochState.assetsDeposited) revert DepositNotFulfillable();
++
++        uint256 vaultUnderlyingBalance = IERC20(underlyingToken).balanceOf(address(this));
++        uint256 idleUnderlying = vaultUnderlyingBalance - reservedWithdrawalAssets;
++        uint256 unsolicitedUnderlying = idleUnderlying > pendingDepositAssets
++            ? idleUnderlying - pendingDepositAssets
++            : 0;
++
+         uint256 totalAssets = accountant.computeNAV(address(this), underlyingToken, managerInput) +
+             1 -
+-            epochState.assetsDeposited -
++            pendingDepositAssets -
++            unsolicitedUnderlying -
+             reservedWithdrawalAssets;
+ 
+         uint256 _totalSupply = totalSupply;
+@@ -504,6 +521,7 @@ contract HypoVault is ERC20Minimal, Multicall, Ownable {
+         });
+ 
+         totalSupply = _totalSupply + sharesReceived;
++        pendingDepositAssets -= assetsToFulfill;
+ 
+         emit DepositsFulfilled(currentEpoch, assetsToFulfill, sharesReceived);
+     }
+diff --git a/test/PoC.t.sol b/test/PoC.t.sol
+index 70fd590..2390747 100644
+--- a/test/PoC.t.sol
++++ b/test/PoC.t.sol
+@@ -41,6 +41,7 @@ contract PoC is Test {
+         mockAccountant = new VaultAccountantMock();
+         token = new ERC20S("Test Token", "TEST", 18);
+         vault = new HypoVault(address(token), Manager, IVaultAccountant(address(mockAccountant)), 100); // 1% performance fee
++        mockAccountant.setExpectedVault(address(vault));
+ 
+         // Set fee wallet
+         vault.setFeeWallet(FeeWallet);
+@@ -85,6 +86,24 @@ contract PoC is Test {
+     }
+ 
+     function test_submissionValidity() external {
+-        // Proof of Concept code demonstrating the vulnerability
++        vm.prank(Alice);
++        vault.requestDeposit(100 ether);
++
++        vm.startPrank(Manager);
++        mockAccountant.setNav(100 ether);
++        vault.fulfillDeposits(100 ether, "");
++        vault.executeDeposit(Alice, 0);
++        vm.stopPrank();
++
++        vm.prank(Bob);
++        vault.requestDeposit(100 ether);
++
++        token.mint(address(vault), 900 ether);
++
++        vm.startPrank(Manager);
++        mockAccountant.setNav(1_000 ether);
++        vm.expectRevert(stdError.arithmeticError);
++        vault.fulfillDeposits(100 ether, "");
++        vm.stopPrank();
+     }
+ }

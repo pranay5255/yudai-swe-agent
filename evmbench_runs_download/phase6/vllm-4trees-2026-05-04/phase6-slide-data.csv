@@ -1,0 +1,2 @@
+runner,agent_id,audit_id,submission_exists,mode,score,max_score,score_percentage,detect_award,detect_max_award,detect_award_percentage,runtime_seconds,failure_reason,trajectory_manifest,expected_trajectory_count,found_trajectory_count,missing_trajectory_count,run_dir
+modal-forest-qwen-vllm-4trees-debug,mini-swe-agent-modal-forest-qwen-vllm-4trees-debug,2024-01-canto,False,detect,,,,,,,,command exited 143,,0,0,0,

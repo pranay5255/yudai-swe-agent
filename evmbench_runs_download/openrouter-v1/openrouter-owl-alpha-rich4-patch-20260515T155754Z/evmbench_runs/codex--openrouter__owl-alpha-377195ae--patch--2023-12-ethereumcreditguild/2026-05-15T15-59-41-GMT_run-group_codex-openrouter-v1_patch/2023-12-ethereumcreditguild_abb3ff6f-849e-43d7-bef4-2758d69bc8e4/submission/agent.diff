@@ -1,0 +1,63 @@
+diff --git a/protocol-configuration/addresses.json b/protocol-configuration/addresses.json
+index 6b80495..8c6a4b7 100644
+--- a/protocol-configuration/addresses.json
++++ b/protocol-configuration/addresses.json
+@@ -22,5 +22,33 @@
+   {
+     "addr": "0x83f20f44975d03b1b09e64809b757c47f942beea",
+     "name": "ERC20_SDAI"
++  },
++  {
++    "addr": "0x6d2eed85750d316088343d6d5e91ca59eb052768",
++    "name": "CORE"
++  },
++  {
++    "addr": "0x8bbbb5d294c78bd70dd88e6d63498deca0c7bbce",
++    "name": "PROFIT_MANAGER"
++  },
++  {
++    "addr": "0xffdcc297c11a15f778e155c20c0b7ab1d26f5561",
++    "name": "ERC20_GUSDC"
++  },
++  {
++    "addr": "0x7c5f18184dbdb4fe367fc3b38aaa576c6b86f2af",
++    "name": "ERC20_GUILD"
++  },
++  {
++    "addr": "0x0706bbc4cb4f4a620a13e05c164795df7c3eb4a5",
++    "name": "RATE_LIMITED_CREDIT_MINTER"
++  },
++  {
++    "addr": "0x46fec5b6940e7f836af8b690ceb811afe5d1debe",
++    "name": "RATE_LIMITED_GUILD_MINTER"
++  },
++  {
++    "addr": "0xdaa54530dd673f5fdff4dc6b9790ab6ae121d13a",
++    "name": "SURPLUS_GUILD_MINTER"
+   }
+ ]
+\ No newline at end of file
+diff --git a/src/loan/SurplusGuildMinter.sol b/src/loan/SurplusGuildMinter.sol
+index f68e9ff..5b144f9 100644
+--- a/src/loan/SurplusGuildMinter.sol
++++ b/src/loan/SurplusGuildMinter.sol
+@@ -226,15 +226,16 @@ contract SurplusGuildMinter is CoreRef {
+     {
+         bool updateState;
+         lastGaugeLoss = GuildToken(guild).lastGaugeLoss(term);
+-        if (lastGaugeLoss > uint256(userStake.lastGaugeLoss)) {
+-            slashed = true;
+-        }
+ 
+         // if the user is not staking, do nothing
+         userStake = _stakes[user][term];
+         if (userStake.stakeTime == 0)
+             return (lastGaugeLoss, userStake, slashed);
+ 
++        if (lastGaugeLoss > uint256(userStake.lastGaugeLoss)) {
++            slashed = true;
++        }
++
+         // compute CREDIT rewards
+         ProfitManager(profitManager).claimRewards(address(this)); // this will update profit indexes
+         uint256 _profitIndex = ProfitManager(profitManager)

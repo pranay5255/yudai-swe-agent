@@ -1,0 +1,1196 @@
+(node:519) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+GaugeExtraRewarder:  0x0165878A594ca255338adfa4d48449f69242Eb8F
+rolesToString: GOVERNANCE,VOTER_ADMIN,GAUGE_ADMIN,BRIBE_ADMIN,FEE_MANAGER,CL_POOL_ADMIN,GENESIS_MANAGER,EPOCH_MANAGER
+roles: 0x474f5645524e414e4345,0x564f5445525f41444d494e,0x47415547455f41444d494e,0x42524942455f41444d494e,0x4645455f4d414e41474552,0x434c5f504f4f4c5f41444d494e,0x47454e455349535f4d414e41474552,0x45504f43485f4d414e41474552
+roleToAddresses: 
+addressToRole: [ 'GOVERNANCE' ]
+removeRoleFrom: 
+removeRoleFrom: 
+{
+  "stats": {
+    "suites": 8,
+    "tests": 31,
+    "passes": 8,
+    "pending": 0,
+    "failures": 23,
+    "start": "2026-05-15T15:02:48.078Z",
+    "end": "2026-05-15T15:02:49.150Z",
+    "duration": 1072
+  },
+  "tests": [
+    {
+      "title": "Deploy contract",
+      "fullTitle": "test rewarder Deploy contract",
+      "file": "/home/agent/audit/test/TestAudit/m01_gaugeExtraReward.js",
+      "duration": 38,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: missing argument:  in Contract constructor (count=7, expectedCount=8, code=MISSING_ARGUMENT, version=contracts/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at Logger.checkArgumentCount (node_modules/@ethersproject/logger/src.ts/index.ts:340:18)\n    at ContractFactory.<anonymous> (node_modules/@ethersproject/contracts/src.ts/index.ts:1237:16)\n    at step (node_modules/@ethersproject/contracts/lib/index.js:48:23)\n    at Object.next (node_modules/@ethersproject/contracts/lib/index.js:29:53)\n    at /home/agent/audit/node_modules/@ethersproject/contracts/lib/index.js:23:71\n    at new Promise (<anonymous>)\n    at __awaiter (node_modules/@ethersproject/contracts/lib/index.js:19:12)\n    at ContractFactory.deploy (node_modules/@ethersproject/contracts/lib/index.js:1138:16)\n    at Context.<anonymous> (test/TestAudit/m01_gaugeExtraReward.js:34:30)",
+        "message": "missing argument:  in Contract constructor (count=7, expectedCount=8, code=MISSING_ARGUMENT, version=contracts/5.8.0)",
+        "reason": "missing argument:  in Contract constructor",
+        "code": "MISSING_ARGUMENT",
+        "count": 7,
+        "expectedCount": 8
+      }
+    },
+    {
+      "title": "Set contracts ",
+      "fullTitle": "test rewarder Set contracts ",
+      "file": "/home/agent/audit/test/TestAudit/m01_gaugeExtraReward.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: GaugeV2 is not defined\n    at Context.<anonymous> (test/TestAudit/m01_gaugeExtraReward.js:48:9)",
+        "message": "GaugeV2 is not defined"
+      }
+    },
+    {
+      "title": "User interaction",
+      "fullTitle": "test rewarder User interaction",
+      "file": "/home/agent/audit/test/TestAudit/m01_gaugeExtraReward.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: GaugeV2 is not defined\n    at Context.<anonymous> (test/TestAudit/m01_gaugeExtraReward.js:70:44)",
+        "message": "GaugeV2 is not defined"
+      }
+    },
+    {
+      "title": "Should load external contract for test (ERC20,LPs,..)",
+      "fullTitle": "Black - Deployment Section Should load external contract for test (ERC20,LPs,..)",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 37,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should deploy PermissionsRegistry.sol",
+      "fullTitle": "Black - Deployment Section Should deploy PermissionsRegistry.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 22,
+      "currentRetry": 0,
+      "err": {
+        "stack": "TypeError: PermissionsRegistry.__helper_stringToBytes is not a function\n    at Context.<anonymous> (test/testCL.js:70:76)",
+        "message": "PermissionsRegistry.__helper_stringToBytes is not a function"
+      }
+    },
+    {
+      "title": "Should deploy BribeFactoryV3.sol",
+      "fullTitle": "Black - Deployment Section Should deploy BribeFactoryV3.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 40,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: types/values length mismatch (count={\"types\":4,\"values\":2}, value={\"types\":[{\"name\":\"_voter\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_gaugeManager\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_permissionsRegistry\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_tokenHandler\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true}],\"values\":[\"0x0000000000000000000000000000000000000000\",\"0x5FbDB2315678afecb367f032d93F642f64180aa3\"]}, code=INVALID_ARGUMENT, version=abi/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at AbiCoder.encode (node_modules/@ethersproject/abi/src.ts/abi-coder.ts:101:20)\n    at Interface._encodeParams (node_modules/@ethersproject/abi/src.ts/interface.ts:323:31)\n    at Interface.encodeFunctionData (node_modules/@ethersproject/abi/src.ts/interface.ts:378:18)\n    at getInitializerData (node_modules/@openzeppelin/hardhat-upgrades/src/utils/initializer-data.ts:17:30)\n    at Proxy.deployProxy (node_modules/@openzeppelin/hardhat-upgrades/src/deploy-proxy.ts:48:36)\n    at Context.<anonymous> (test/testCL.js:90:26)",
+        "message": "types/values length mismatch (count={\"types\":4,\"values\":2}, value={\"types\":[{\"name\":\"_voter\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_gaugeManager\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_permissionsRegistry\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_tokenHandler\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true}],\"values\":[\"0x0000000000000000000000000000000000000000\",\"0x5FbDB2315678afecb367f032d93F642f64180aa3\"]}, code=INVALID_ARGUMENT, version=abi/5.8.0)",
+        "reason": "types/values length mismatch",
+        "code": "INVALID_ARGUMENT",
+        "count": {
+          "types": 4,
+          "values": 2
+        },
+        "value": {
+          "types": [
+            {
+              "name": "_voter",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            },
+            {
+              "name": "_gaugeManager",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            },
+            {
+              "name": "_permissionsRegistry",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            },
+            {
+              "name": "_tokenHandler",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            }
+          ],
+          "values": [
+            "0x0000000000000000000000000000000000000000",
+            "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+          ]
+        }
+      }
+    },
+    {
+      "title": "Should deploy GaugeFactory.sol",
+      "fullTitle": "Black - Deployment Section Should deploy GaugeFactory.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 42,
+      "currentRetry": 0,
+      "speed": "medium",
+      "err": {}
+    },
+    {
+      "title": "Should deploy GaugeFactory_CL.sol",
+      "fullTitle": "Black - Deployment Section Should deploy GaugeFactory_CL.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 5,
+      "currentRetry": 0,
+      "err": {
+        "stack": "HardhatError: HH700: Artifact for contract \"GaugeFactory_CL\" not found. Did you mean \"GaugeFactoryCL\"?\n    at Artifacts._handleWrongArtifactForContractName (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:721:11)\n    at Artifacts._getArtifactPathFromFiles (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:852:19)\n    at Artifacts._getArtifactPath (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:516:21)\n    at Artifacts.readArtifact (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:71:26)\n    at getContractFactory (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/helpers.ts:99:22)\n    at Context.<anonymous> (/home/agent/audit/test/testCL.js:113:16)",
+        "message": "HH700: Artifact for contract \"GaugeFactory_CL\" not found. Did you mean \"GaugeFactoryCL\"?",
+        "name": "HardhatError",
+        "_stack": "HardhatError: HH700: Artifact for contract \"GaugeFactory_CL\" not found. Did you mean \"GaugeFactoryCL\"?\n    at Artifacts._handleWrongArtifactForContractName (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:721:11)\n    at Artifacts._getArtifactPathFromFiles (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:852:19)\n    at Artifacts._getArtifactPath (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:516:21)\n    at Artifacts.readArtifact (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:71:26)\n    at getContractFactory (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/helpers.ts:99:22)\n    at Context.<anonymous> (/home/agent/audit/test/testCL.js:113:16)",
+        "errorDescriptor": {
+          "number": 700,
+          "message": "Artifact for contract \"%contractName%\" not found. %suggestion%",
+          "title": "Artifact not found",
+          "description": "Tried to import a nonexistent artifact.\n\nPlease double check that your contracts have been compiled and double check your artifact's name.",
+          "shouldBeReported": false
+        },
+        "number": 700,
+        "messageArguments": {
+          "contractName": "GaugeFactory_CL",
+          "suggestion": "Did you mean \"GaugeFactoryCL\"?"
+        },
+        "_isHardhatError": true
+      }
+    },
+    {
+      "title": "Should deploy Voter.sol",
+      "fullTitle": "Black - Deployment Section Should deploy Voter.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 4,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: BribeFactoryV3 is not defined\n    at Context.<anonymous> (test/testCL.js:128:77)",
+        "message": "BribeFactoryV3 is not defined"
+      }
+    },
+    {
+      "title": "Should set all",
+      "fullTitle": "Black - Deployment Section Should set all",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:139:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should add Liquidity",
+      "fullTitle": "Black - LP Section Should add Liquidity",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 3,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"getDepositAmount(address,address,uint256)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at Interface.decodeFunctionResult (node_modules/@ethersproject/abi/src.ts/interface.ts:427:23)\n    at Contract.<anonymous> (node_modules/@ethersproject/contracts/src.ts/index.ts:400:44)\n    at step (node_modules/@ethersproject/contracts/lib/index.js:48:23)\n    at Object.next (node_modules/@ethersproject/contracts/lib/index.js:29:53)\n    at fulfilled (node_modules/@ethersproject/contracts/lib/index.js:20:58)",
+        "message": "call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"getDepositAmount(address,address,uint256)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)",
+        "reason": null,
+        "code": "CALL_EXCEPTION",
+        "method": "getDepositAmount(address,address,uint256)",
+        "data": "0x",
+        "errorArgs": null,
+        "errorName": null,
+        "errorSignature": null,
+        "address": "0x6B3d98406779DDca311E6C43553773207b506Fa6",
+        "args": [
+          "0x5EEca990E9B7489665F4B57D27D92c78BC2AfBF2",
+          "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+          {
+            "type": "BigNumber",
+            "hex": "0x8ac7230489e80000"
+          }
+        ],
+        "transaction": {
+          "data": "0x5ccfb71d0000000000000000000000005eeca990e9b7489665f4b57d27d92c78bc2afbf20000000000000000000000008ac76a51cc950d9822d68b83fe1ad97b32cd580d0000000000000000000000000000000000000000000000008ac7230489e80000",
+          "to": "0x6B3d98406779DDca311E6C43553773207b506Fa6",
+          "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          "gasLimit": {
+            "type": "BigNumber",
+            "hex": "0xf11dd8"
+          }
+        }
+      }
+    },
+    {
+      "title": "Should create Gauge for Concentrated liqudity",
+      "fullTitle": "Black - Gauge Section Should create Gauge for Concentrated liqudity",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:211:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should deploy extra rewarder for hypervisor gauge",
+      "fullTitle": "Black - Gauge Section Should deploy extra rewarder for hypervisor gauge",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 3,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: gauge is not defined\n    at Context.<anonymous> (test/testCL.js:233:62)",
+        "message": "gauge is not defined"
+      }
+    },
+    {
+      "title": "Should create 2 Gauge Classic",
+      "fullTitle": "Black - Gauge Section Should create 2 Gauge Classic",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:257:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should deposit into the gauge",
+      "fullTitle": "Black - Gauge Section Should deposit into the gauge",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: gauge is not defined\n    at Context.<anonymous> (test/testCL.js:295:22)",
+        "message": "gauge is not defined"
+      }
+    },
+    {
+      "title": "Should send fees to vault",
+      "fullTitle": "Black - Gauge Section Should send fees to vault",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: feevault is not defined\n    at Context.<anonymous> (test/testCL.js:311:37)",
+        "message": "feevault is not defined"
+      }
+    },
+    {
+      "title": "Should claim fees from vault",
+      "fullTitle": "Black - Gauge Section Should claim fees from vault",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: int_bribe is not defined\n    at Context.<anonymous> (test/testCL.js:327:37)",
+        "message": "int_bribe is not defined"
+      }
+    },
+    {
+      "title": "Should vote [10,10,80]",
+      "fullTitle": "Black - Voter Section Should vote [10,10,80]",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:361:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should send rewards to voter and distribute",
+      "fullTitle": "Black - Voter Section Should send rewards to voter and distribute",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:389:45)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should vote_2 [10,10,80]",
+      "fullTitle": "Black - Voter Section Should vote_2 [10,10,80]",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:423:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should harvest from gauge + extra rewarder",
+      "fullTitle": "Black - Claim rewards Section Should harvest from gauge + extra rewarder",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 3,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"balanceOf(address)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at Interface.decodeFunctionResult (node_modules/@ethersproject/abi/src.ts/interface.ts:427:23)\n    at Contract.<anonymous> (node_modules/@ethersproject/contracts/src.ts/index.ts:400:44)\n    at step (node_modules/@ethersproject/contracts/lib/index.js:48:23)\n    at Object.next (node_modules/@ethersproject/contracts/lib/index.js:29:53)\n    at fulfilled (node_modules/@ethersproject/contracts/lib/index.js:20:58)",
+        "message": "call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"balanceOf(address)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)",
+        "reason": null,
+        "code": "CALL_EXCEPTION",
+        "method": "balanceOf(address)",
+        "data": "0x",
+        "errorArgs": null,
+        "errorName": null,
+        "errorSignature": null,
+        "address": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+        "args": [
+          "0x8894E0a0c962CB723c1976a4421c95949bE2D4E3"
+        ],
+        "transaction": {
+          "data": "0x70a082310000000000000000000000008894e0a0c962cb723c1976a4421c95949be2d4e3",
+          "to": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+          "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          "gasLimit": {
+            "type": "BigNumber",
+            "hex": "0xf11658"
+          }
+        }
+      }
+    },
+    {
+      "title": "Should get int bribes",
+      "fullTitle": "Black - Claim rewards Section Should get int bribes",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:494:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should load external contract for test (ERC20,LPs,..)",
+      "fullTitle": "Black - Deployment Section Should load external contract for test (ERC20,LPs,..)",
+      "file": "/home/agent/audit/test/testExtraRewarder.js",
+      "duration": 26,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should deploy GaugeExtraRewarder.sol",
+      "fullTitle": "Black - Deployment Section Should deploy GaugeExtraRewarder.sol",
+      "file": "/home/agent/audit/test/testExtraRewarder.js",
+      "duration": 13,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ProviderError: Sender doesn't have enough funds to send tx. The max upfront cost is: 16409405600384400 and the sender's balance is: 0.\n    at EdrProviderWrapper.request (/home/agent/audit/node_modules/hardhat/src/internal/hardhat-network/provider/provider.ts:462:19)\n    at EthersProviderWrapper.send (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)",
+        "message": "Sender doesn't have enough funds to send tx. The max upfront cost is: 16409405600384400 and the sender's balance is: 0.",
+        "name": "ProviderError",
+        "_stack": "ProviderError: Sender doesn't have enough funds to send tx. The max upfront cost is: 16409405600384400 and the sender's balance is: 0.\n    at EdrProviderWrapper.request (/home/agent/audit/node_modules/hardhat/src/internal/hardhat-network/provider/provider.ts:462:19)\n    at EthersProviderWrapper.send (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)",
+        "code": -32000,
+        "_isProviderError": true,
+        "data": null
+      }
+    },
+    {
+      "title": "Should load external contract for test (ERC20,LPs,..)",
+      "fullTitle": "Black - Deployment Section Should load external contract for test (ERC20,LPs,..)",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should deploy PermissionsRegistry.sol",
+      "fullTitle": "Black - Deployment Section Should deploy PermissionsRegistry.sol",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 15,
+      "currentRetry": 0,
+      "err": {
+        "stack": "TypeError: PermissionsRegistry.__helper_stringToBytes is not a function\n    at Context.<anonymous> (test/testPermissionRegistry.js:51:76)",
+        "message": "PermissionsRegistry.__helper_stringToBytes is not a function"
+      }
+    },
+    {
+      "title": "Should rolesToString",
+      "fullTitle": "Black - Deployment Section Should rolesToString",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should roles",
+      "fullTitle": "Black - Deployment Section Should roles",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should roleToAddresses",
+      "fullTitle": "Black - Deployment Section Should roleToAddresses",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should addressToRole",
+      "fullTitle": "Black - Deployment Section Should addressToRole",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 4,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should removeRoleFrom",
+      "fullTitle": "Black - Deployment Section Should removeRoleFrom",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 6,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: VM Exception while processing transaction: reverted with reason string 'not assigned'\n    at PermissionsRegistry.onlyBlackMultisig (contracts/PermissionsRegistry.sol:71)\n    at PermissionsRegistry.removeRoleFrom (contracts/PermissionsRegistry.sol:140)\n    at EdrProviderWrapper.request (node_modules/hardhat/src/internal/hardhat-network/provider/provider.ts:453:41)\n    at EthersProviderWrapper.send (node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)",
+        "message": "VM Exception while processing transaction: reverted with reason string 'not assigned'",
+        "stackTrace": [
+          {
+            "type": 0,
+            "sourceReference": {
+              "sourceName": "contracts/PermissionsRegistry.sol",
+              "sourceContent": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.13;\n\n/*\n    This contract handles the accesses to the various Black contracts.\n*/\n\ncontract PermissionsRegistry {\n\n    /// @notice Control this contract. This is the main multisig 4/6\n    address public blackMultisig;\n\n    /// @notice This is the black team multisig 2/2\n    address public blackTeamMultisig;\n\n    /// @notice Control emergency functions (set to multisig)\n    address public emergencyCouncil;\n\n    /// @notice Check if caller has a role active   (role -> caller -> true/false)\n    mapping(bytes => mapping(address => bool)) public hasRole;\n    mapping(bytes => bool) internal _checkRole;\n\n    mapping(bytes => address[]) internal _roleToAddresses;\n    mapping(address => bytes[]) internal _addressToRoles;\n\n    /// @notice Roles array\n    bytes[] internal _roles;\n\n    event RoleAdded(bytes role);\n    event RoleRemoved(bytes role);\n    event RoleSetFor(address indexed user, bytes indexed role);\n    event RoleRemovedFor(address indexed user, bytes indexed role);\n    event SetEmergencyCouncil(address indexed council);\n    event SetBlackTeamMultisig(address indexed multisig);\n    event SetBlackMultisig(address indexed multisig);\n\n\n\n    constructor() {\n        blackTeamMultisig = msg.sender;\n        blackMultisig = msg.sender;\n        emergencyCouncil = msg.sender;\n\n\n        _roles.push(bytes(\"GOVERNANCE\"));\n        _checkRole[(bytes(\"GOVERNANCE\"))] = true;\n\n        _roles.push(bytes(\"VOTER_ADMIN\"));\n        _checkRole[(bytes(\"VOTER_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GAUGE_ADMIN\"));\n        _checkRole[(bytes(\"GAUGE_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"BRIBE_ADMIN\"));\n        _checkRole[(bytes(\"BRIBE_ADMIN\"))] = true;\n        \n        _roles.push(bytes(\"FEE_MANAGER\"));\n        _checkRole[(bytes(\"FEE_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"CL_POOL_ADMIN\"));\n        _checkRole[(bytes(\"CL_POOL_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GENESIS_MANAGER\"));\n        _checkRole[(bytes(\"GENESIS_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"EPOCH_MANAGER\"));\n        _checkRole[(bytes(\"EPOCH_MANAGER\"))] = true;\n    }\n\n    modifier onlyBlackMultisig() {\n        require(msg.sender == blackMultisig, \"!blackMultisig\");\n        _;\n    }\n\n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                    ROLES SETTINGS\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n    /// @notice add a new role\n    /// @param  role    new role's string (eg role = \"GAUGE_ADMIN\")\n    function addRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(!_checkRole[_role], 'is a role');\n        _checkRole[_role] = true;\n        _roles.push(_role);\n        emit RoleAdded(_role);\n    }\n\n    /// @notice Remove a role\n    /// @dev    set last one to i_th position then .pop()\n    function removeRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n\n        for(uint i = 0; i < _roles.length; i++){\n            if(keccak256(_roles[i]) == keccak256(_role)){\n                _roles[i] = _roles[_roles.length -1];\n                _roles.pop();\n                _checkRole[_role] = false;\n                emit RoleRemoved(_role);\n                break; \n            }\n        }\n\n        address[] memory rta = _roleToAddresses[bytes(role)];\n        for(uint i = 0; i < rta.length; i++){\n            hasRole[bytes(role)][rta[i]] = false;\n            bytes[] memory __roles = _addressToRoles[rta[i]];\n            for(uint k = 0; k < __roles.length; k++){\n                if(keccak256(__roles[k]) == keccak256(bytes(role))){\n                    _addressToRoles[rta[i]][k] = _roles[_roles.length -1];\n                    _addressToRoles[rta[i]].pop();\n                }\n            }\n        }\n\n    }\n\n\n    \n    /// @notice Set a role for an address\n    function setRoleFor(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(!hasRole[_role][c], 'assigned');\n\n        hasRole[_role][c] = true;\n\n        _roleToAddresses[_role].push(c);\n        _addressToRoles[c].push(_role);\n\n        emit RoleSetFor(c, _role);\n\n    }\n\n    \n    /// @notice remove a role from an address\n    function removeRoleFrom(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(hasRole[_role][c], 'not assigned');\n\n        hasRole[_role][c] = false;\n\n        address[] storage rta = _roleToAddresses[_role];\n        for(uint i = 0; i < rta.length; i++){\n            if(rta[i] == c){\n                rta[i] = rta[rta.length -1];\n                rta.pop();\n            }\n        }\n\n        bytes[] storage atr = _addressToRoles[c];\n        for(uint i = 0; i < atr.length; i++){\n            if(keccak256(atr[i]) == keccak256(_role)){\n                atr[i] = atr[atr.length -1];\n                atr.pop();\n            }\n        }\n\n        emit RoleRemovedFor(c, _role);\n        \n    }\n\n    \n\n  \n\n    /************************************************************\n                                VIEW\n    *************************************************************/\n    \n    /// @notice Read roles and return strings\n    function rolesToString() external view returns(string[] memory __roles){\n        __roles = new string[](_roles.length);\n        for(uint i = 0; i < _roles.length; i++){\n            __roles[i] = string(_roles[i]);\n        }\n    }\n\n    \n    /// @notice Read roles array and return bytes\n    function roles() external view returns(bytes[] memory){\n        return _roles;\n    }\n\n    /// @notice Read roles length\n    function rolesLength() external view returns(uint){\n        return _roles.length;\n    }\n\n     /// @notice Return addresses for a given role\n    function roleToAddresses(string memory role) external view returns(address[] memory _addresses){\n        return _roleToAddresses[bytes(role)];\n    }\n\n    /// @notice Return roles for a given address\n    function addressToRole(address _user) external view returns(string[] memory){\n        string[] memory _temp = new string[](_addressToRoles[_user].length);\n        uint i = 0;\n        for(i; i < _temp.length; i++){\n            _temp[i] = string(_addressToRoles[_user][i]);\n        }\n        return _temp;\n    }\n\n    \n    /************************************************************\n                                HELPERS\n    *************************************************************/\n\n    /// @notice Helper function to get bytes from a string\n    function helper_stringToBytes(string memory _input) public pure returns(bytes memory){\n        return bytes(_input);\n    }\n\n    /// @notice Helper function to get string from bytes\n    function helper_bytesToString(bytes memory _input) public pure returns(string memory){\n        return string(_input);\n    }\n\n\n  \n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                EMERGENCY AND MULTISIG\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n\n    /// @notice set emergency counsil\n    /// @param _new new address    \n    function setEmergencyCouncil(address _new) external {\n        require(msg.sender == emergencyCouncil || msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != emergencyCouncil, \"same emergencyCouncil\");\n        emergencyCouncil = _new;\n\n        emit SetEmergencyCouncil(_new);\n    }\n\n\n    /// @notice set black team multisig\n    /// @param _new new address    \n    function setBlackTeamMultisig(address _new) external {\n        require(msg.sender == blackTeamMultisig, \"not allowed\");\n        require(_new != address(0), \"addr 0\");\n        require(_new != blackTeamMultisig, \"same multisig\");\n        blackTeamMultisig = _new;\n        \n        emit SetBlackTeamMultisig(_new);\n    }\n\n    /// @notice set black multisig\n    /// @param _new new address    \n    function setBlackMultisig(address _new) external {\n        require(msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != blackMultisig, \"same multisig\");\n        blackMultisig = _new;\n        \n        emit SetBlackMultisig(_new);\n    }\n    \n\n\n}",
+              "contract": "PermissionsRegistry",
+              "function": "removeRoleFrom",
+              "line": 140,
+              "range": [
+                4585,
+                5380
+              ]
+            },
+            "functionType": 1
+          },
+          {
+            "type": 4,
+            "returnData": {
+              "0": 8,
+              "1": 195,
+              "2": 121,
+              "3": 160,
+              "4": 0,
+              "5": 0,
+              "6": 0,
+              "7": 0,
+              "8": 0,
+              "9": 0,
+              "10": 0,
+              "11": 0,
+              "12": 0,
+              "13": 0,
+              "14": 0,
+              "15": 0,
+              "16": 0,
+              "17": 0,
+              "18": 0,
+              "19": 0,
+              "20": 0,
+              "21": 0,
+              "22": 0,
+              "23": 0,
+              "24": 0,
+              "25": 0,
+              "26": 0,
+              "27": 0,
+              "28": 0,
+              "29": 0,
+              "30": 0,
+              "31": 0,
+              "32": 0,
+              "33": 0,
+              "34": 0,
+              "35": 32,
+              "36": 0,
+              "37": 0,
+              "38": 0,
+              "39": 0,
+              "40": 0,
+              "41": 0,
+              "42": 0,
+              "43": 0,
+              "44": 0,
+              "45": 0,
+              "46": 0,
+              "47": 0,
+              "48": 0,
+              "49": 0,
+              "50": 0,
+              "51": 0,
+              "52": 0,
+              "53": 0,
+              "54": 0,
+              "55": 0,
+              "56": 0,
+              "57": 0,
+              "58": 0,
+              "59": 0,
+              "60": 0,
+              "61": 0,
+              "62": 0,
+              "63": 0,
+              "64": 0,
+              "65": 0,
+              "66": 0,
+              "67": 12,
+              "68": 110,
+              "69": 111,
+              "70": 116,
+              "71": 32,
+              "72": 97,
+              "73": 115,
+              "74": 115,
+              "75": 105,
+              "76": 103,
+              "77": 110,
+              "78": 101,
+              "79": 100,
+              "80": 0,
+              "81": 0,
+              "82": 0,
+              "83": 0,
+              "84": 0,
+              "85": 0,
+              "86": 0,
+              "87": 0,
+              "88": 0,
+              "89": 0,
+              "90": 0,
+              "91": 0,
+              "92": 0,
+              "93": 0,
+              "94": 0,
+              "95": 0,
+              "96": 0,
+              "97": 0,
+              "98": 0,
+              "99": 0
+            },
+            "sourceReference": {
+              "sourceName": "contracts/PermissionsRegistry.sol",
+              "sourceContent": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.13;\n\n/*\n    This contract handles the accesses to the various Black contracts.\n*/\n\ncontract PermissionsRegistry {\n\n    /// @notice Control this contract. This is the main multisig 4/6\n    address public blackMultisig;\n\n    /// @notice This is the black team multisig 2/2\n    address public blackTeamMultisig;\n\n    /// @notice Control emergency functions (set to multisig)\n    address public emergencyCouncil;\n\n    /// @notice Check if caller has a role active   (role -> caller -> true/false)\n    mapping(bytes => mapping(address => bool)) public hasRole;\n    mapping(bytes => bool) internal _checkRole;\n\n    mapping(bytes => address[]) internal _roleToAddresses;\n    mapping(address => bytes[]) internal _addressToRoles;\n\n    /// @notice Roles array\n    bytes[] internal _roles;\n\n    event RoleAdded(bytes role);\n    event RoleRemoved(bytes role);\n    event RoleSetFor(address indexed user, bytes indexed role);\n    event RoleRemovedFor(address indexed user, bytes indexed role);\n    event SetEmergencyCouncil(address indexed council);\n    event SetBlackTeamMultisig(address indexed multisig);\n    event SetBlackMultisig(address indexed multisig);\n\n\n\n    constructor() {\n        blackTeamMultisig = msg.sender;\n        blackMultisig = msg.sender;\n        emergencyCouncil = msg.sender;\n\n\n        _roles.push(bytes(\"GOVERNANCE\"));\n        _checkRole[(bytes(\"GOVERNANCE\"))] = true;\n\n        _roles.push(bytes(\"VOTER_ADMIN\"));\n        _checkRole[(bytes(\"VOTER_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GAUGE_ADMIN\"));\n        _checkRole[(bytes(\"GAUGE_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"BRIBE_ADMIN\"));\n        _checkRole[(bytes(\"BRIBE_ADMIN\"))] = true;\n        \n        _roles.push(bytes(\"FEE_MANAGER\"));\n        _checkRole[(bytes(\"FEE_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"CL_POOL_ADMIN\"));\n        _checkRole[(bytes(\"CL_POOL_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GENESIS_MANAGER\"));\n        _checkRole[(bytes(\"GENESIS_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"EPOCH_MANAGER\"));\n        _checkRole[(bytes(\"EPOCH_MANAGER\"))] = true;\n    }\n\n    modifier onlyBlackMultisig() {\n        require(msg.sender == blackMultisig, \"!blackMultisig\");\n        _;\n    }\n\n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                    ROLES SETTINGS\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n    /// @notice add a new role\n    /// @param  role    new role's string (eg role = \"GAUGE_ADMIN\")\n    function addRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(!_checkRole[_role], 'is a role');\n        _checkRole[_role] = true;\n        _roles.push(_role);\n        emit RoleAdded(_role);\n    }\n\n    /// @notice Remove a role\n    /// @dev    set last one to i_th position then .pop()\n    function removeRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n\n        for(uint i = 0; i < _roles.length; i++){\n            if(keccak256(_roles[i]) == keccak256(_role)){\n                _roles[i] = _roles[_roles.length -1];\n                _roles.pop();\n                _checkRole[_role] = false;\n                emit RoleRemoved(_role);\n                break; \n            }\n        }\n\n        address[] memory rta = _roleToAddresses[bytes(role)];\n        for(uint i = 0; i < rta.length; i++){\n            hasRole[bytes(role)][rta[i]] = false;\n            bytes[] memory __roles = _addressToRoles[rta[i]];\n            for(uint k = 0; k < __roles.length; k++){\n                if(keccak256(__roles[k]) == keccak256(bytes(role))){\n                    _addressToRoles[rta[i]][k] = _roles[_roles.length -1];\n                    _addressToRoles[rta[i]].pop();\n                }\n            }\n        }\n\n    }\n\n\n    \n    /// @notice Set a role for an address\n    function setRoleFor(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(!hasRole[_role][c], 'assigned');\n\n        hasRole[_role][c] = true;\n\n        _roleToAddresses[_role].push(c);\n        _addressToRoles[c].push(_role);\n\n        emit RoleSetFor(c, _role);\n\n    }\n\n    \n    /// @notice remove a role from an address\n    function removeRoleFrom(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(hasRole[_role][c], 'not assigned');\n\n        hasRole[_role][c] = false;\n\n        address[] storage rta = _roleToAddresses[_role];\n        for(uint i = 0; i < rta.length; i++){\n            if(rta[i] == c){\n                rta[i] = rta[rta.length -1];\n                rta.pop();\n            }\n        }\n\n        bytes[] storage atr = _addressToRoles[c];\n        for(uint i = 0; i < atr.length; i++){\n            if(keccak256(atr[i]) == keccak256(_role)){\n                atr[i] = atr[atr.length -1];\n                atr.pop();\n            }\n        }\n\n        emit RoleRemovedFor(c, _role);\n        \n    }\n\n    \n\n  \n\n    /************************************************************\n                                VIEW\n    *************************************************************/\n    \n    /// @notice Read roles and return strings\n    function rolesToString() external view returns(string[] memory __roles){\n        __roles = new string[](_roles.length);\n        for(uint i = 0; i < _roles.length; i++){\n            __roles[i] = string(_roles[i]);\n        }\n    }\n\n    \n    /// @notice Read roles array and return bytes\n    function roles() external view returns(bytes[] memory){\n        return _roles;\n    }\n\n    /// @notice Read roles length\n    function rolesLength() external view returns(uint){\n        return _roles.length;\n    }\n\n     /// @notice Return addresses for a given role\n    function roleToAddresses(string memory role) external view returns(address[] memory _addresses){\n        return _roleToAddresses[bytes(role)];\n    }\n\n    /// @notice Return roles for a given address\n    function addressToRole(address _user) external view returns(string[] memory){\n        string[] memory _temp = new string[](_addressToRoles[_user].length);\n        uint i = 0;\n        for(i; i < _temp.length; i++){\n            _temp[i] = string(_addressToRoles[_user][i]);\n        }\n        return _temp;\n    }\n\n    \n    /************************************************************\n                                HELPERS\n    *************************************************************/\n\n    /// @notice Helper function to get bytes from a string\n    function helper_stringToBytes(string memory _input) public pure returns(bytes memory){\n        return bytes(_input);\n    }\n\n    /// @notice Helper function to get string from bytes\n    function helper_bytesToString(bytes memory _input) public pure returns(string memory){\n        return string(_input);\n    }\n\n\n  \n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                EMERGENCY AND MULTISIG\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n\n    /// @notice set emergency counsil\n    /// @param _new new address    \n    function setEmergencyCouncil(address _new) external {\n        require(msg.sender == emergencyCouncil || msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != emergencyCouncil, \"same emergencyCouncil\");\n        emergencyCouncil = _new;\n\n        emit SetEmergencyCouncil(_new);\n    }\n\n\n    /// @notice set black team multisig\n    /// @param _new new address    \n    function setBlackTeamMultisig(address _new) external {\n        require(msg.sender == blackTeamMultisig, \"not allowed\");\n        require(_new != address(0), \"addr 0\");\n        require(_new != blackTeamMultisig, \"same multisig\");\n        blackTeamMultisig = _new;\n        \n        emit SetBlackTeamMultisig(_new);\n    }\n\n    /// @notice set black multisig\n    /// @param _new new address    \n    function setBlackMultisig(address _new) external {\n        require(msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != blackMultisig, \"same multisig\");\n        blackMultisig = _new;\n        \n        emit SetBlackMultisig(_new);\n    }\n    \n\n\n}",
+              "contract": "PermissionsRegistry",
+              "function": "onlyBlackMultisig",
+              "line": 71,
+              "range": [
+                2172,
+                2226
+              ]
+            },
+            "isInvalidOpcodeError": false
+          }
+        ],
+        "data": "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000c6e6f742061737369676e65640000000000000000000000000000000000000000",
+        "transactionHash": "0x234cb31a802a6e60d5c8b969ee48249cc7de8abf7b71c04dbeead40a7d64656d"
+      }
+    }
+  ],
+  "pending": [],
+  "failures": [
+    {
+      "title": "Deploy contract",
+      "fullTitle": "test rewarder Deploy contract",
+      "file": "/home/agent/audit/test/TestAudit/m01_gaugeExtraReward.js",
+      "duration": 38,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: missing argument:  in Contract constructor (count=7, expectedCount=8, code=MISSING_ARGUMENT, version=contracts/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at Logger.checkArgumentCount (node_modules/@ethersproject/logger/src.ts/index.ts:340:18)\n    at ContractFactory.<anonymous> (node_modules/@ethersproject/contracts/src.ts/index.ts:1237:16)\n    at step (node_modules/@ethersproject/contracts/lib/index.js:48:23)\n    at Object.next (node_modules/@ethersproject/contracts/lib/index.js:29:53)\n    at /home/agent/audit/node_modules/@ethersproject/contracts/lib/index.js:23:71\n    at new Promise (<anonymous>)\n    at __awaiter (node_modules/@ethersproject/contracts/lib/index.js:19:12)\n    at ContractFactory.deploy (node_modules/@ethersproject/contracts/lib/index.js:1138:16)\n    at Context.<anonymous> (test/TestAudit/m01_gaugeExtraReward.js:34:30)",
+        "message": "missing argument:  in Contract constructor (count=7, expectedCount=8, code=MISSING_ARGUMENT, version=contracts/5.8.0)",
+        "reason": "missing argument:  in Contract constructor",
+        "code": "MISSING_ARGUMENT",
+        "count": 7,
+        "expectedCount": 8
+      }
+    },
+    {
+      "title": "Set contracts ",
+      "fullTitle": "test rewarder Set contracts ",
+      "file": "/home/agent/audit/test/TestAudit/m01_gaugeExtraReward.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: GaugeV2 is not defined\n    at Context.<anonymous> (test/TestAudit/m01_gaugeExtraReward.js:48:9)",
+        "message": "GaugeV2 is not defined"
+      }
+    },
+    {
+      "title": "User interaction",
+      "fullTitle": "test rewarder User interaction",
+      "file": "/home/agent/audit/test/TestAudit/m01_gaugeExtraReward.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: GaugeV2 is not defined\n    at Context.<anonymous> (test/TestAudit/m01_gaugeExtraReward.js:70:44)",
+        "message": "GaugeV2 is not defined"
+      }
+    },
+    {
+      "title": "Should deploy PermissionsRegistry.sol",
+      "fullTitle": "Black - Deployment Section Should deploy PermissionsRegistry.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 22,
+      "currentRetry": 0,
+      "err": {
+        "stack": "TypeError: PermissionsRegistry.__helper_stringToBytes is not a function\n    at Context.<anonymous> (test/testCL.js:70:76)",
+        "message": "PermissionsRegistry.__helper_stringToBytes is not a function"
+      }
+    },
+    {
+      "title": "Should deploy BribeFactoryV3.sol",
+      "fullTitle": "Black - Deployment Section Should deploy BribeFactoryV3.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 40,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: types/values length mismatch (count={\"types\":4,\"values\":2}, value={\"types\":[{\"name\":\"_voter\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_gaugeManager\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_permissionsRegistry\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_tokenHandler\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true}],\"values\":[\"0x0000000000000000000000000000000000000000\",\"0x5FbDB2315678afecb367f032d93F642f64180aa3\"]}, code=INVALID_ARGUMENT, version=abi/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at AbiCoder.encode (node_modules/@ethersproject/abi/src.ts/abi-coder.ts:101:20)\n    at Interface._encodeParams (node_modules/@ethersproject/abi/src.ts/interface.ts:323:31)\n    at Interface.encodeFunctionData (node_modules/@ethersproject/abi/src.ts/interface.ts:378:18)\n    at getInitializerData (node_modules/@openzeppelin/hardhat-upgrades/src/utils/initializer-data.ts:17:30)\n    at Proxy.deployProxy (node_modules/@openzeppelin/hardhat-upgrades/src/deploy-proxy.ts:48:36)\n    at Context.<anonymous> (test/testCL.js:90:26)",
+        "message": "types/values length mismatch (count={\"types\":4,\"values\":2}, value={\"types\":[{\"name\":\"_voter\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_gaugeManager\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_permissionsRegistry\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true},{\"name\":\"_tokenHandler\",\"type\":\"address\",\"indexed\":null,\"components\":null,\"arrayLength\":null,\"arrayChildren\":null,\"baseType\":\"address\",\"_isParamType\":true}],\"values\":[\"0x0000000000000000000000000000000000000000\",\"0x5FbDB2315678afecb367f032d93F642f64180aa3\"]}, code=INVALID_ARGUMENT, version=abi/5.8.0)",
+        "reason": "types/values length mismatch",
+        "code": "INVALID_ARGUMENT",
+        "count": {
+          "types": 4,
+          "values": 2
+        },
+        "value": {
+          "types": [
+            {
+              "name": "_voter",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            },
+            {
+              "name": "_gaugeManager",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            },
+            {
+              "name": "_permissionsRegistry",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            },
+            {
+              "name": "_tokenHandler",
+              "type": "address",
+              "indexed": null,
+              "components": null,
+              "arrayLength": null,
+              "arrayChildren": null,
+              "baseType": "address",
+              "_isParamType": true
+            }
+          ],
+          "values": [
+            "0x0000000000000000000000000000000000000000",
+            "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+          ]
+        }
+      }
+    },
+    {
+      "title": "Should deploy GaugeFactory_CL.sol",
+      "fullTitle": "Black - Deployment Section Should deploy GaugeFactory_CL.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 5,
+      "currentRetry": 0,
+      "err": {
+        "stack": "HardhatError: HH700: Artifact for contract \"GaugeFactory_CL\" not found. Did you mean \"GaugeFactoryCL\"?\n    at Artifacts._handleWrongArtifactForContractName (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:721:11)\n    at Artifacts._getArtifactPathFromFiles (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:852:19)\n    at Artifacts._getArtifactPath (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:516:21)\n    at Artifacts.readArtifact (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:71:26)\n    at getContractFactory (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/helpers.ts:99:22)\n    at Context.<anonymous> (/home/agent/audit/test/testCL.js:113:16)",
+        "message": "HH700: Artifact for contract \"GaugeFactory_CL\" not found. Did you mean \"GaugeFactoryCL\"?",
+        "name": "HardhatError",
+        "_stack": "HardhatError: HH700: Artifact for contract \"GaugeFactory_CL\" not found. Did you mean \"GaugeFactoryCL\"?\n    at Artifacts._handleWrongArtifactForContractName (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:721:11)\n    at Artifacts._getArtifactPathFromFiles (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:852:19)\n    at Artifacts._getArtifactPath (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:516:21)\n    at Artifacts.readArtifact (/home/agent/audit/node_modules/hardhat/src/internal/artifacts.ts:71:26)\n    at getContractFactory (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/helpers.ts:99:22)\n    at Context.<anonymous> (/home/agent/audit/test/testCL.js:113:16)",
+        "errorDescriptor": {
+          "number": 700,
+          "message": "Artifact for contract \"%contractName%\" not found. %suggestion%",
+          "title": "Artifact not found",
+          "description": "Tried to import a nonexistent artifact.\n\nPlease double check that your contracts have been compiled and double check your artifact's name.",
+          "shouldBeReported": false
+        },
+        "number": 700,
+        "messageArguments": {
+          "contractName": "GaugeFactory_CL",
+          "suggestion": "Did you mean \"GaugeFactoryCL\"?"
+        },
+        "_isHardhatError": true
+      }
+    },
+    {
+      "title": "Should deploy Voter.sol",
+      "fullTitle": "Black - Deployment Section Should deploy Voter.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 4,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: BribeFactoryV3 is not defined\n    at Context.<anonymous> (test/testCL.js:128:77)",
+        "message": "BribeFactoryV3 is not defined"
+      }
+    },
+    {
+      "title": "Should set all",
+      "fullTitle": "Black - Deployment Section Should set all",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:139:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should add Liquidity",
+      "fullTitle": "Black - LP Section Should add Liquidity",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 3,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"getDepositAmount(address,address,uint256)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at Interface.decodeFunctionResult (node_modules/@ethersproject/abi/src.ts/interface.ts:427:23)\n    at Contract.<anonymous> (node_modules/@ethersproject/contracts/src.ts/index.ts:400:44)\n    at step (node_modules/@ethersproject/contracts/lib/index.js:48:23)\n    at Object.next (node_modules/@ethersproject/contracts/lib/index.js:29:53)\n    at fulfilled (node_modules/@ethersproject/contracts/lib/index.js:20:58)",
+        "message": "call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"getDepositAmount(address,address,uint256)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)",
+        "reason": null,
+        "code": "CALL_EXCEPTION",
+        "method": "getDepositAmount(address,address,uint256)",
+        "data": "0x",
+        "errorArgs": null,
+        "errorName": null,
+        "errorSignature": null,
+        "address": "0x6B3d98406779DDca311E6C43553773207b506Fa6",
+        "args": [
+          "0x5EEca990E9B7489665F4B57D27D92c78BC2AfBF2",
+          "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+          {
+            "type": "BigNumber",
+            "hex": "0x8ac7230489e80000"
+          }
+        ],
+        "transaction": {
+          "data": "0x5ccfb71d0000000000000000000000005eeca990e9b7489665f4b57d27d92c78bc2afbf20000000000000000000000008ac76a51cc950d9822d68b83fe1ad97b32cd580d0000000000000000000000000000000000000000000000008ac7230489e80000",
+          "to": "0x6B3d98406779DDca311E6C43553773207b506Fa6",
+          "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          "gasLimit": {
+            "type": "BigNumber",
+            "hex": "0xf11dd8"
+          }
+        }
+      }
+    },
+    {
+      "title": "Should create Gauge for Concentrated liqudity",
+      "fullTitle": "Black - Gauge Section Should create Gauge for Concentrated liqudity",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:211:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should deploy extra rewarder for hypervisor gauge",
+      "fullTitle": "Black - Gauge Section Should deploy extra rewarder for hypervisor gauge",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 3,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: gauge is not defined\n    at Context.<anonymous> (test/testCL.js:233:62)",
+        "message": "gauge is not defined"
+      }
+    },
+    {
+      "title": "Should create 2 Gauge Classic",
+      "fullTitle": "Black - Gauge Section Should create 2 Gauge Classic",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:257:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should deposit into the gauge",
+      "fullTitle": "Black - Gauge Section Should deposit into the gauge",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: gauge is not defined\n    at Context.<anonymous> (test/testCL.js:295:22)",
+        "message": "gauge is not defined"
+      }
+    },
+    {
+      "title": "Should send fees to vault",
+      "fullTitle": "Black - Gauge Section Should send fees to vault",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: feevault is not defined\n    at Context.<anonymous> (test/testCL.js:311:37)",
+        "message": "feevault is not defined"
+      }
+    },
+    {
+      "title": "Should claim fees from vault",
+      "fullTitle": "Black - Gauge Section Should claim fees from vault",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: int_bribe is not defined\n    at Context.<anonymous> (test/testCL.js:327:37)",
+        "message": "int_bribe is not defined"
+      }
+    },
+    {
+      "title": "Should vote [10,10,80]",
+      "fullTitle": "Black - Voter Section Should vote [10,10,80]",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:361:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should send rewards to voter and distribute",
+      "fullTitle": "Black - Voter Section Should send rewards to voter and distribute",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 1,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:389:45)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should vote_2 [10,10,80]",
+      "fullTitle": "Black - Voter Section Should vote_2 [10,10,80]",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:423:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should harvest from gauge + extra rewarder",
+      "fullTitle": "Black - Claim rewards Section Should harvest from gauge + extra rewarder",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 3,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"balanceOf(address)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)\n    at Logger.makeError (node_modules/@ethersproject/logger/src.ts/index.ts:269:28)\n    at Logger.throwError (node_modules/@ethersproject/logger/src.ts/index.ts:281:20)\n    at Interface.decodeFunctionResult (node_modules/@ethersproject/abi/src.ts/interface.ts:427:23)\n    at Contract.<anonymous> (node_modules/@ethersproject/contracts/src.ts/index.ts:400:44)\n    at step (node_modules/@ethersproject/contracts/lib/index.js:48:23)\n    at Object.next (node_modules/@ethersproject/contracts/lib/index.js:29:53)\n    at fulfilled (node_modules/@ethersproject/contracts/lib/index.js:20:58)",
+        "message": "call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ] (method=\"balanceOf(address)\", data=\"0x\", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.8.0)",
+        "reason": null,
+        "code": "CALL_EXCEPTION",
+        "method": "balanceOf(address)",
+        "data": "0x",
+        "errorArgs": null,
+        "errorName": null,
+        "errorSignature": null,
+        "address": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+        "args": [
+          "0x8894E0a0c962CB723c1976a4421c95949bE2D4E3"
+        ],
+        "transaction": {
+          "data": "0x70a082310000000000000000000000008894e0a0c962cb723c1976a4421c95949be2d4e3",
+          "to": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+          "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          "gasLimit": {
+            "type": "BigNumber",
+            "hex": "0xf11658"
+          }
+        }
+      }
+    },
+    {
+      "title": "Should get int bribes",
+      "fullTitle": "Black - Claim rewards Section Should get int bribes",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ReferenceError: voter is not defined\n    at Context.<anonymous> (test/testCL.js:494:9)",
+        "message": "voter is not defined"
+      }
+    },
+    {
+      "title": "Should deploy GaugeExtraRewarder.sol",
+      "fullTitle": "Black - Deployment Section Should deploy GaugeExtraRewarder.sol",
+      "file": "/home/agent/audit/test/testExtraRewarder.js",
+      "duration": 13,
+      "currentRetry": 0,
+      "err": {
+        "stack": "ProviderError: Sender doesn't have enough funds to send tx. The max upfront cost is: 16409405600384400 and the sender's balance is: 0.\n    at EdrProviderWrapper.request (/home/agent/audit/node_modules/hardhat/src/internal/hardhat-network/provider/provider.ts:462:19)\n    at EthersProviderWrapper.send (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)",
+        "message": "Sender doesn't have enough funds to send tx. The max upfront cost is: 16409405600384400 and the sender's balance is: 0.",
+        "name": "ProviderError",
+        "_stack": "ProviderError: Sender doesn't have enough funds to send tx. The max upfront cost is: 16409405600384400 and the sender's balance is: 0.\n    at EdrProviderWrapper.request (/home/agent/audit/node_modules/hardhat/src/internal/hardhat-network/provider/provider.ts:462:19)\n    at EthersProviderWrapper.send (/home/agent/audit/node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)",
+        "code": -32000,
+        "_isProviderError": true,
+        "data": null
+      }
+    },
+    {
+      "title": "Should deploy PermissionsRegistry.sol",
+      "fullTitle": "Black - Deployment Section Should deploy PermissionsRegistry.sol",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 15,
+      "currentRetry": 0,
+      "err": {
+        "stack": "TypeError: PermissionsRegistry.__helper_stringToBytes is not a function\n    at Context.<anonymous> (test/testPermissionRegistry.js:51:76)",
+        "message": "PermissionsRegistry.__helper_stringToBytes is not a function"
+      }
+    },
+    {
+      "title": "Should removeRoleFrom",
+      "fullTitle": "Black - Deployment Section Should removeRoleFrom",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 6,
+      "currentRetry": 0,
+      "err": {
+        "stack": "Error: VM Exception while processing transaction: reverted with reason string 'not assigned'\n    at PermissionsRegistry.onlyBlackMultisig (contracts/PermissionsRegistry.sol:71)\n    at PermissionsRegistry.removeRoleFrom (contracts/PermissionsRegistry.sol:140)\n    at EdrProviderWrapper.request (node_modules/hardhat/src/internal/hardhat-network/provider/provider.ts:453:41)\n    at EthersProviderWrapper.send (node_modules/@nomiclabs/hardhat-ethers/src/internal/ethers-provider-wrapper.ts:13:20)",
+        "message": "VM Exception while processing transaction: reverted with reason string 'not assigned'",
+        "stackTrace": [
+          {
+            "type": 0,
+            "sourceReference": {
+              "sourceName": "contracts/PermissionsRegistry.sol",
+              "sourceContent": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.13;\n\n/*\n    This contract handles the accesses to the various Black contracts.\n*/\n\ncontract PermissionsRegistry {\n\n    /// @notice Control this contract. This is the main multisig 4/6\n    address public blackMultisig;\n\n    /// @notice This is the black team multisig 2/2\n    address public blackTeamMultisig;\n\n    /// @notice Control emergency functions (set to multisig)\n    address public emergencyCouncil;\n\n    /// @notice Check if caller has a role active   (role -> caller -> true/false)\n    mapping(bytes => mapping(address => bool)) public hasRole;\n    mapping(bytes => bool) internal _checkRole;\n\n    mapping(bytes => address[]) internal _roleToAddresses;\n    mapping(address => bytes[]) internal _addressToRoles;\n\n    /// @notice Roles array\n    bytes[] internal _roles;\n\n    event RoleAdded(bytes role);\n    event RoleRemoved(bytes role);\n    event RoleSetFor(address indexed user, bytes indexed role);\n    event RoleRemovedFor(address indexed user, bytes indexed role);\n    event SetEmergencyCouncil(address indexed council);\n    event SetBlackTeamMultisig(address indexed multisig);\n    event SetBlackMultisig(address indexed multisig);\n\n\n\n    constructor() {\n        blackTeamMultisig = msg.sender;\n        blackMultisig = msg.sender;\n        emergencyCouncil = msg.sender;\n\n\n        _roles.push(bytes(\"GOVERNANCE\"));\n        _checkRole[(bytes(\"GOVERNANCE\"))] = true;\n\n        _roles.push(bytes(\"VOTER_ADMIN\"));\n        _checkRole[(bytes(\"VOTER_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GAUGE_ADMIN\"));\n        _checkRole[(bytes(\"GAUGE_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"BRIBE_ADMIN\"));\n        _checkRole[(bytes(\"BRIBE_ADMIN\"))] = true;\n        \n        _roles.push(bytes(\"FEE_MANAGER\"));\n        _checkRole[(bytes(\"FEE_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"CL_POOL_ADMIN\"));\n        _checkRole[(bytes(\"CL_POOL_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GENESIS_MANAGER\"));\n        _checkRole[(bytes(\"GENESIS_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"EPOCH_MANAGER\"));\n        _checkRole[(bytes(\"EPOCH_MANAGER\"))] = true;\n    }\n\n    modifier onlyBlackMultisig() {\n        require(msg.sender == blackMultisig, \"!blackMultisig\");\n        _;\n    }\n\n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                    ROLES SETTINGS\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n    /// @notice add a new role\n    /// @param  role    new role's string (eg role = \"GAUGE_ADMIN\")\n    function addRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(!_checkRole[_role], 'is a role');\n        _checkRole[_role] = true;\n        _roles.push(_role);\n        emit RoleAdded(_role);\n    }\n\n    /// @notice Remove a role\n    /// @dev    set last one to i_th position then .pop()\n    function removeRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n\n        for(uint i = 0; i < _roles.length; i++){\n            if(keccak256(_roles[i]) == keccak256(_role)){\n                _roles[i] = _roles[_roles.length -1];\n                _roles.pop();\n                _checkRole[_role] = false;\n                emit RoleRemoved(_role);\n                break; \n            }\n        }\n\n        address[] memory rta = _roleToAddresses[bytes(role)];\n        for(uint i = 0; i < rta.length; i++){\n            hasRole[bytes(role)][rta[i]] = false;\n            bytes[] memory __roles = _addressToRoles[rta[i]];\n            for(uint k = 0; k < __roles.length; k++){\n                if(keccak256(__roles[k]) == keccak256(bytes(role))){\n                    _addressToRoles[rta[i]][k] = _roles[_roles.length -1];\n                    _addressToRoles[rta[i]].pop();\n                }\n            }\n        }\n\n    }\n\n\n    \n    /// @notice Set a role for an address\n    function setRoleFor(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(!hasRole[_role][c], 'assigned');\n\n        hasRole[_role][c] = true;\n\n        _roleToAddresses[_role].push(c);\n        _addressToRoles[c].push(_role);\n\n        emit RoleSetFor(c, _role);\n\n    }\n\n    \n    /// @notice remove a role from an address\n    function removeRoleFrom(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(hasRole[_role][c], 'not assigned');\n\n        hasRole[_role][c] = false;\n\n        address[] storage rta = _roleToAddresses[_role];\n        for(uint i = 0; i < rta.length; i++){\n            if(rta[i] == c){\n                rta[i] = rta[rta.length -1];\n                rta.pop();\n            }\n        }\n\n        bytes[] storage atr = _addressToRoles[c];\n        for(uint i = 0; i < atr.length; i++){\n            if(keccak256(atr[i]) == keccak256(_role)){\n                atr[i] = atr[atr.length -1];\n                atr.pop();\n            }\n        }\n\n        emit RoleRemovedFor(c, _role);\n        \n    }\n\n    \n\n  \n\n    /************************************************************\n                                VIEW\n    *************************************************************/\n    \n    /// @notice Read roles and return strings\n    function rolesToString() external view returns(string[] memory __roles){\n        __roles = new string[](_roles.length);\n        for(uint i = 0; i < _roles.length; i++){\n            __roles[i] = string(_roles[i]);\n        }\n    }\n\n    \n    /// @notice Read roles array and return bytes\n    function roles() external view returns(bytes[] memory){\n        return _roles;\n    }\n\n    /// @notice Read roles length\n    function rolesLength() external view returns(uint){\n        return _roles.length;\n    }\n\n     /// @notice Return addresses for a given role\n    function roleToAddresses(string memory role) external view returns(address[] memory _addresses){\n        return _roleToAddresses[bytes(role)];\n    }\n\n    /// @notice Return roles for a given address\n    function addressToRole(address _user) external view returns(string[] memory){\n        string[] memory _temp = new string[](_addressToRoles[_user].length);\n        uint i = 0;\n        for(i; i < _temp.length; i++){\n            _temp[i] = string(_addressToRoles[_user][i]);\n        }\n        return _temp;\n    }\n\n    \n    /************************************************************\n                                HELPERS\n    *************************************************************/\n\n    /// @notice Helper function to get bytes from a string\n    function helper_stringToBytes(string memory _input) public pure returns(bytes memory){\n        return bytes(_input);\n    }\n\n    /// @notice Helper function to get string from bytes\n    function helper_bytesToString(bytes memory _input) public pure returns(string memory){\n        return string(_input);\n    }\n\n\n  \n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                EMERGENCY AND MULTISIG\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n\n    /// @notice set emergency counsil\n    /// @param _new new address    \n    function setEmergencyCouncil(address _new) external {\n        require(msg.sender == emergencyCouncil || msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != emergencyCouncil, \"same emergencyCouncil\");\n        emergencyCouncil = _new;\n\n        emit SetEmergencyCouncil(_new);\n    }\n\n\n    /// @notice set black team multisig\n    /// @param _new new address    \n    function setBlackTeamMultisig(address _new) external {\n        require(msg.sender == blackTeamMultisig, \"not allowed\");\n        require(_new != address(0), \"addr 0\");\n        require(_new != blackTeamMultisig, \"same multisig\");\n        blackTeamMultisig = _new;\n        \n        emit SetBlackTeamMultisig(_new);\n    }\n\n    /// @notice set black multisig\n    /// @param _new new address    \n    function setBlackMultisig(address _new) external {\n        require(msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != blackMultisig, \"same multisig\");\n        blackMultisig = _new;\n        \n        emit SetBlackMultisig(_new);\n    }\n    \n\n\n}",
+              "contract": "PermissionsRegistry",
+              "function": "removeRoleFrom",
+              "line": 140,
+              "range": [
+                4585,
+                5380
+              ]
+            },
+            "functionType": 1
+          },
+          {
+            "type": 4,
+            "returnData": {
+              "0": 8,
+              "1": 195,
+              "2": 121,
+              "3": 160,
+              "4": 0,
+              "5": 0,
+              "6": 0,
+              "7": 0,
+              "8": 0,
+              "9": 0,
+              "10": 0,
+              "11": 0,
+              "12": 0,
+              "13": 0,
+              "14": 0,
+              "15": 0,
+              "16": 0,
+              "17": 0,
+              "18": 0,
+              "19": 0,
+              "20": 0,
+              "21": 0,
+              "22": 0,
+              "23": 0,
+              "24": 0,
+              "25": 0,
+              "26": 0,
+              "27": 0,
+              "28": 0,
+              "29": 0,
+              "30": 0,
+              "31": 0,
+              "32": 0,
+              "33": 0,
+              "34": 0,
+              "35": 32,
+              "36": 0,
+              "37": 0,
+              "38": 0,
+              "39": 0,
+              "40": 0,
+              "41": 0,
+              "42": 0,
+              "43": 0,
+              "44": 0,
+              "45": 0,
+              "46": 0,
+              "47": 0,
+              "48": 0,
+              "49": 0,
+              "50": 0,
+              "51": 0,
+              "52": 0,
+              "53": 0,
+              "54": 0,
+              "55": 0,
+              "56": 0,
+              "57": 0,
+              "58": 0,
+              "59": 0,
+              "60": 0,
+              "61": 0,
+              "62": 0,
+              "63": 0,
+              "64": 0,
+              "65": 0,
+              "66": 0,
+              "67": 12,
+              "68": 110,
+              "69": 111,
+              "70": 116,
+              "71": 32,
+              "72": 97,
+              "73": 115,
+              "74": 115,
+              "75": 105,
+              "76": 103,
+              "77": 110,
+              "78": 101,
+              "79": 100,
+              "80": 0,
+              "81": 0,
+              "82": 0,
+              "83": 0,
+              "84": 0,
+              "85": 0,
+              "86": 0,
+              "87": 0,
+              "88": 0,
+              "89": 0,
+              "90": 0,
+              "91": 0,
+              "92": 0,
+              "93": 0,
+              "94": 0,
+              "95": 0,
+              "96": 0,
+              "97": 0,
+              "98": 0,
+              "99": 0
+            },
+            "sourceReference": {
+              "sourceName": "contracts/PermissionsRegistry.sol",
+              "sourceContent": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.13;\n\n/*\n    This contract handles the accesses to the various Black contracts.\n*/\n\ncontract PermissionsRegistry {\n\n    /// @notice Control this contract. This is the main multisig 4/6\n    address public blackMultisig;\n\n    /// @notice This is the black team multisig 2/2\n    address public blackTeamMultisig;\n\n    /// @notice Control emergency functions (set to multisig)\n    address public emergencyCouncil;\n\n    /// @notice Check if caller has a role active   (role -> caller -> true/false)\n    mapping(bytes => mapping(address => bool)) public hasRole;\n    mapping(bytes => bool) internal _checkRole;\n\n    mapping(bytes => address[]) internal _roleToAddresses;\n    mapping(address => bytes[]) internal _addressToRoles;\n\n    /// @notice Roles array\n    bytes[] internal _roles;\n\n    event RoleAdded(bytes role);\n    event RoleRemoved(bytes role);\n    event RoleSetFor(address indexed user, bytes indexed role);\n    event RoleRemovedFor(address indexed user, bytes indexed role);\n    event SetEmergencyCouncil(address indexed council);\n    event SetBlackTeamMultisig(address indexed multisig);\n    event SetBlackMultisig(address indexed multisig);\n\n\n\n    constructor() {\n        blackTeamMultisig = msg.sender;\n        blackMultisig = msg.sender;\n        emergencyCouncil = msg.sender;\n\n\n        _roles.push(bytes(\"GOVERNANCE\"));\n        _checkRole[(bytes(\"GOVERNANCE\"))] = true;\n\n        _roles.push(bytes(\"VOTER_ADMIN\"));\n        _checkRole[(bytes(\"VOTER_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GAUGE_ADMIN\"));\n        _checkRole[(bytes(\"GAUGE_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"BRIBE_ADMIN\"));\n        _checkRole[(bytes(\"BRIBE_ADMIN\"))] = true;\n        \n        _roles.push(bytes(\"FEE_MANAGER\"));\n        _checkRole[(bytes(\"FEE_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"CL_POOL_ADMIN\"));\n        _checkRole[(bytes(\"CL_POOL_ADMIN\"))] = true;\n\n        _roles.push(bytes(\"GENESIS_MANAGER\"));\n        _checkRole[(bytes(\"GENESIS_MANAGER\"))] = true;\n\n        _roles.push(bytes(\"EPOCH_MANAGER\"));\n        _checkRole[(bytes(\"EPOCH_MANAGER\"))] = true;\n    }\n\n    modifier onlyBlackMultisig() {\n        require(msg.sender == blackMultisig, \"!blackMultisig\");\n        _;\n    }\n\n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                    ROLES SETTINGS\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n    /// @notice add a new role\n    /// @param  role    new role's string (eg role = \"GAUGE_ADMIN\")\n    function addRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(!_checkRole[_role], 'is a role');\n        _checkRole[_role] = true;\n        _roles.push(_role);\n        emit RoleAdded(_role);\n    }\n\n    /// @notice Remove a role\n    /// @dev    set last one to i_th position then .pop()\n    function removeRole(string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n\n        for(uint i = 0; i < _roles.length; i++){\n            if(keccak256(_roles[i]) == keccak256(_role)){\n                _roles[i] = _roles[_roles.length -1];\n                _roles.pop();\n                _checkRole[_role] = false;\n                emit RoleRemoved(_role);\n                break; \n            }\n        }\n\n        address[] memory rta = _roleToAddresses[bytes(role)];\n        for(uint i = 0; i < rta.length; i++){\n            hasRole[bytes(role)][rta[i]] = false;\n            bytes[] memory __roles = _addressToRoles[rta[i]];\n            for(uint k = 0; k < __roles.length; k++){\n                if(keccak256(__roles[k]) == keccak256(bytes(role))){\n                    _addressToRoles[rta[i]][k] = _roles[_roles.length -1];\n                    _addressToRoles[rta[i]].pop();\n                }\n            }\n        }\n\n    }\n\n\n    \n    /// @notice Set a role for an address\n    function setRoleFor(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(!hasRole[_role][c], 'assigned');\n\n        hasRole[_role][c] = true;\n\n        _roleToAddresses[_role].push(c);\n        _addressToRoles[c].push(_role);\n\n        emit RoleSetFor(c, _role);\n\n    }\n\n    \n    /// @notice remove a role from an address\n    function removeRoleFrom(address c, string memory role) external onlyBlackMultisig {\n        bytes memory _role = bytes(role);\n        require(_checkRole[_role], 'not a role');\n        require(hasRole[_role][c], 'not assigned');\n\n        hasRole[_role][c] = false;\n\n        address[] storage rta = _roleToAddresses[_role];\n        for(uint i = 0; i < rta.length; i++){\n            if(rta[i] == c){\n                rta[i] = rta[rta.length -1];\n                rta.pop();\n            }\n        }\n\n        bytes[] storage atr = _addressToRoles[c];\n        for(uint i = 0; i < atr.length; i++){\n            if(keccak256(atr[i]) == keccak256(_role)){\n                atr[i] = atr[atr.length -1];\n                atr.pop();\n            }\n        }\n\n        emit RoleRemovedFor(c, _role);\n        \n    }\n\n    \n\n  \n\n    /************************************************************\n                                VIEW\n    *************************************************************/\n    \n    /// @notice Read roles and return strings\n    function rolesToString() external view returns(string[] memory __roles){\n        __roles = new string[](_roles.length);\n        for(uint i = 0; i < _roles.length; i++){\n            __roles[i] = string(_roles[i]);\n        }\n    }\n\n    \n    /// @notice Read roles array and return bytes\n    function roles() external view returns(bytes[] memory){\n        return _roles;\n    }\n\n    /// @notice Read roles length\n    function rolesLength() external view returns(uint){\n        return _roles.length;\n    }\n\n     /// @notice Return addresses for a given role\n    function roleToAddresses(string memory role) external view returns(address[] memory _addresses){\n        return _roleToAddresses[bytes(role)];\n    }\n\n    /// @notice Return roles for a given address\n    function addressToRole(address _user) external view returns(string[] memory){\n        string[] memory _temp = new string[](_addressToRoles[_user].length);\n        uint i = 0;\n        for(i; i < _temp.length; i++){\n            _temp[i] = string(_addressToRoles[_user][i]);\n        }\n        return _temp;\n    }\n\n    \n    /************************************************************\n                                HELPERS\n    *************************************************************/\n\n    /// @notice Helper function to get bytes from a string\n    function helper_stringToBytes(string memory _input) public pure returns(bytes memory){\n        return bytes(_input);\n    }\n\n    /// @notice Helper function to get string from bytes\n    function helper_bytesToString(bytes memory _input) public pure returns(string memory){\n        return string(_input);\n    }\n\n\n  \n    /* -----------------------------------------------------------------------------\n    --------------------------------------------------------------------------------\n                                EMERGENCY AND MULTISIG\n    --------------------------------------------------------------------------------\n    ----------------------------------------------------------------------------- */\n\n\n    /// @notice set emergency counsil\n    /// @param _new new address    \n    function setEmergencyCouncil(address _new) external {\n        require(msg.sender == emergencyCouncil || msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != emergencyCouncil, \"same emergencyCouncil\");\n        emergencyCouncil = _new;\n\n        emit SetEmergencyCouncil(_new);\n    }\n\n\n    /// @notice set black team multisig\n    /// @param _new new address    \n    function setBlackTeamMultisig(address _new) external {\n        require(msg.sender == blackTeamMultisig, \"not allowed\");\n        require(_new != address(0), \"addr 0\");\n        require(_new != blackTeamMultisig, \"same multisig\");\n        blackTeamMultisig = _new;\n        \n        emit SetBlackTeamMultisig(_new);\n    }\n\n    /// @notice set black multisig\n    /// @param _new new address    \n    function setBlackMultisig(address _new) external {\n        require(msg.sender == blackMultisig, \"not allowed\");\n        require(_new != address(0), \"addr0\");\n        require(_new != blackMultisig, \"same multisig\");\n        blackMultisig = _new;\n        \n        emit SetBlackMultisig(_new);\n    }\n    \n\n\n}",
+              "contract": "PermissionsRegistry",
+              "function": "onlyBlackMultisig",
+              "line": 71,
+              "range": [
+                2172,
+                2226
+              ]
+            },
+            "isInvalidOpcodeError": false
+          }
+        ],
+        "data": "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000c6e6f742061737369676e65640000000000000000000000000000000000000000",
+        "transactionHash": "0x234cb31a802a6e60d5c8b969ee48249cc7de8abf7b71c04dbeead40a7d64656d"
+      }
+    }
+  ],
+  "passes": [
+    {
+      "title": "Should load external contract for test (ERC20,LPs,..)",
+      "fullTitle": "Black - Deployment Section Should load external contract for test (ERC20,LPs,..)",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 37,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should deploy GaugeFactory.sol",
+      "fullTitle": "Black - Deployment Section Should deploy GaugeFactory.sol",
+      "file": "/home/agent/audit/test/testCL.js",
+      "duration": 42,
+      "currentRetry": 0,
+      "speed": "medium",
+      "err": {}
+    },
+    {
+      "title": "Should load external contract for test (ERC20,LPs,..)",
+      "fullTitle": "Black - Deployment Section Should load external contract for test (ERC20,LPs,..)",
+      "file": "/home/agent/audit/test/testExtraRewarder.js",
+      "duration": 26,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should load external contract for test (ERC20,LPs,..)",
+      "fullTitle": "Black - Deployment Section Should load external contract for test (ERC20,LPs,..)",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should rolesToString",
+      "fullTitle": "Black - Deployment Section Should rolesToString",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should roles",
+      "fullTitle": "Black - Deployment Section Should roles",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should roleToAddresses",
+      "fullTitle": "Black - Deployment Section Should roleToAddresses",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 2,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "Should addressToRole",
+      "fullTitle": "Black - Deployment Section Should addressToRole",
+      "file": "/home/agent/audit/test/testPermissionRegistry.js",
+      "duration": 4,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    }
+  ]
+}

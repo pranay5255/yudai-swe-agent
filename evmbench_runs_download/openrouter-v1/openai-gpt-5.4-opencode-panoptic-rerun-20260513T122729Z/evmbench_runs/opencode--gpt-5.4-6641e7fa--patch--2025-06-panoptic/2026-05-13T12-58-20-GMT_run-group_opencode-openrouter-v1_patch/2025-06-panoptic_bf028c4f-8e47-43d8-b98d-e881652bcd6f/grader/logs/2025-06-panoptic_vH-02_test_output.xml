@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Test run" tests="1" failures="0" errors="0" timestamp="2026-05-13T13:28:31.394+00:00" time="0.003">
+    <testsuite name="test/PoC.t.sol:PoC" tests="1" disabled="0" errors="0" failures="0" time="0.003">
+        <testcase name="test_underlyingOutsidePoolInconsistentNAV()" time="0.002">
+            <system-out>[PASS] test_underlyingOutsidePoolInconsistentNAV() (gas: 786066)</system-out>
+        </testcase>
+        <system-out>Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 3.48ms (2.15ms CPU time)</system-out>
+    </testsuite>
+</testsuites>
+
